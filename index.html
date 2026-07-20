@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>俄罗斯方块 · 可爱版</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(160deg, #ffe0ec 0%, #e0f4ff 100%);
+    color: #5b4a5a;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { display: flex; gap: 20px; align-items: flex-start; padding: 12px; }
+  .game { position: relative; }
+  canvas#board {
+    background: #241f36;
+    border: 3px solid #ffd1e3;
+    border-radius: 14px;
+    display: block;
+    box-shadow: 0 8px 24px rgba(180, 120, 160, 0.35);
+    /* 画布显示尺寸由 CSS 控制，内部坐标系不变 */
+    height: min(78vh, 660px);
+    width: auto;
+    aspect-ratio: 360 / 660;
+  }
+  .hud { width: 150px; display: flex; flex-direction: column; gap: 12px; }
+  .panel {
+    background: rgba(255, 255, 255, 0.75);
+    border: 2px solid #ffd1e3;
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(180, 120, 160, 0.2);
+  }
+  .stats > div { margin-top: 6px; }
+  .stats > div:first-child { margin-top: 0; }
+  .label { font-size: 12px; color: #b0889e; }
+  .value { font-size: 22px; font-weight: bold; color: #e0558a; }
+  canvas#next { display: block; margin: 8px auto 0; }
+  .help { font-size: 12px; color: #a08a9a; line-height: 1.9; }
+  .overlay {
+    position: absolute; inset: 0;
+    background: rgba(36, 31, 54, 0.8);
+    display: flex; justify-content: center; align-items: center;
+    text-align: center; font-size: 20px; line-height: 1.8; color: #ffe0ec;
+    border-radius: 14px;
+  }
+  .overlay.hidden { display: none; }
+  /* 消行鼓励语：画布上方浮出，1.2s 上浮渐隐 */
+  .cheer {
+    position: absolute; top: 12%; left: 50%;
+    transform: translateX(-50%);
+    font-size: 28px; font-weight: bold; color: #ff6b9d;
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.8);
+    pointer-events: none; white-space: nowrap;
+    animation: cheerUp 1.2s ease-out forwards;
+  }
+  .cheer.big { font-size: 40px; } /* 四消时加大字号 */
+  @keyframes cheerUp {
+    from { opacity: 1; transform: translate(-50%, 0); }
+    to   { opacity: 0; transform: translate(-50%, -60px); }
+  }
+  /* 音乐开关常驻（右上角） */
+  .music-btn {
+    position: fixed; top: 10px; right: 10px; z-index: 10;
+    width: 44px; height: 44px; font-size: 20px;
+    border: 2px solid #ffd1e3; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 10px rgba(180, 120, 160, 0.3);
+    cursor: pointer;
+  }
+  /* 触控按钮区：PC 端默认隐藏 */
+  .touch { display: none; }
+  /* 窄屏 / 触屏：竖排布局 + 触控按钮 */
+  @media (max-width: 719px), (pointer: coarse) {
+    body { align-items: flex-start; }
+    .wrap { flex-direction: column; align-items: center; gap: 8px; padding: 8px; }
+    .hud { width: 100%; max-width: 360px; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+    .panel { padding: 8px 12px; }
+    /* HUD 压缩为一行三个数字 */
+    .stats { flex: 1; display: flex; gap: 14px; justify-content: space-around; align-items: center; }
+    .stats > div { margin-top: 0; text-align: center; }
+    .value { font-size: 18px; }
+    .next-panel { display: flex; align-items: center; gap: 6px; }
+    .next-panel .label { margin: 0; }
+    canvas#next { width: 56px; height: 56px; margin: 0; } /* next 预览缩小 */
+    .help { display: none; }
+    .game { order: 2; }
+    .hud { order: 1; }
+    .touch {
+      order: 3;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      width: 100%; max-width: 360px; margin-top: 6px;
+    }
+    .touch button {
+      height: 56px; font-size: 24px;
+      border: 2px solid #ffd1e3; border-radius: 16px;
+      background: rgba(255, 255, 255, 0.85); color: #e0558a;
+      box-shadow: 0 4px 10px rgba(180, 120, 160, 0.25);
+      touch-action: none; user-select: none; -webkit-user-select: none;
+    }
+    .touch button:active { background: #ffd1e3; }
+  }
+</style>
+</head>
+<body>
+<button id="musicBtn" class="music-btn" title="音乐开关">🔊</button>
+<div class="wrap">
+  <div class="game" id="game">
+    <canvas id="board" width="360" height="660"></canvas>
+    <div id="overlay" class="overlay hidden"></div>
+  </div>
+  <aside class="hud">
+    <div class="panel stats">
+      <div><div class="label">分数</div><div id="score" class="value">0</div></div>
+      <div><div class="label">等级</div><div id="level" class="value">1</div></div>
+      <div><div class="label">消行</div><div id="lines" class="value">0</div></div>
+    </div>
+    <div class="panel next-panel">
+      <div class="label">下一个</div>
+      <canvas id="next" width="120" height="120"></canvas>
+    </div>
+    <div class="panel help">
+      ← → 移动<br>↓ 软降<br>↑ / X 旋转<br>Z 反转<br>空格 硬降<br>P 暂停<br>R 重开
+    </div>
+  </aside>
+  <div class="touch">
+    <button data-act="left">◀</button>
+    <button data-act="rotate">⟳</button>
+    <button data-act="right">▶</button>
+    <button data-act="down">↓</button>
+    <button data-act="drop">⤓</button>
+    <button data-act="pause">⏸</button>
+  </div>
+</div>
+<script>
+// === LOGIC START ===
+// ---------- 常量 ----------
+const COLS = 12;
+const ROWS = 22;
+
+const SHAPES = [
+  null,
+  [[1, 1, 1, 1]],           // 1: I
+  [[1, 1], [1, 1]],         // 2: O
+  [[0, 1, 0], [1, 1, 1]],   // 3: T
+  [[0, 1, 1], [1, 1, 0]],   // 4: S
+  [[1, 1, 0], [0, 1, 1]],   // 5: Z
+  [[0, 0, 1], [1, 1, 1]],   // 6: L
+  [[1, 0, 0], [1, 1, 1]],   // 7: J
+];
+
+const COLORS = [
+  null,
+  '#00f0f0', // I 青
+  '#f0f000', // O 黄
+  '#a000f0', // T 紫
+  '#00f000', // S 绿
+  '#f00000', // Z 红
+  '#f0a000', // L 橙
+  '#0000f0', // J 蓝
+];
+
+const SCORE_TABLE = [0, 100, 300, 500, 800]; // 消 0-4 行的基础分
+
+// 踢墙偏移 [dx, dy]：原位 → 左1 → 右1 → 左2 → 右2 → 上1
+const KICKS = [[0, 0], [-1, 0], [1, 0], [-2, 0], [2, 0], [0, -1]];
+
+// ---------- 棋盘 ----------
+function createBoard() {
+  return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
+}
+
+// 判断 matrix 放在 (row, col) 是否碰撞（越界或与已有方块重叠）
+function collides(board, matrix, row, col) {
+  for (let r = 0; r < matrix.length; r++) {
+    for (let c = 0; c < matrix[r].length; c++) {
+      if (!matrix[r][c]) continue;
+      const br = row + r, bc = col + c;
+      if (bc < 0 || bc >= COLS || br >= ROWS) return true;
+      if (br >= 0 && board[br][bc]) return true;
+    }
+  }
+  return false;
+}
+
+// ---------- 旋转 ----------
+function rotateCW(m) {
+  return m[0].map((_, i) => m.map(row => row[i]).reverse());
+}
+
+function rotateCCW(m) {
+  return m[0].map((_, i) => m.map(row => row[row.length - 1 - i]));
+}
+
+// 尝试旋转（含踢墙），成功返回 {matrix, row, col}，失败返回 null
+function tryRotate(board, matrix, row, col, dir) {
+  const rotated = dir > 0 ? rotateCW(matrix) : rotateCCW(matrix);
+  for (const [dx, dy] of KICKS) {
+    if (!collides(board, rotated, row + dy, col + dx)) {
+      return { matrix: rotated, row: row + dy, col: col + dx };
+    }
+  }
+  return null;
+}
+
+// ---------- 7-bag 发牌器 ----------
+function createBag() {
+  let bag = [];
+  return function next() {
+    if (bag.length === 0) {
+      bag = [1, 2, 3, 4, 5, 6, 7];
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+    }
+    return bag.pop();
+  };
+}
+
+// ---------- 消行 ----------
+function clearLines(board) {
+  const kept = board.filter(row => row.some(c => c === 0));
+  const count = ROWS - kept.length;
+  while (kept.length < ROWS) kept.unshift(new Array(COLS).fill(0));
+  return { board: kept, count };
+}
+
+// ---------- 计分与等级 ----------
+function lineScore(count, level) {
+  return SCORE_TABLE[count] * level;
+}
+
+function levelForLines(lines) {
+  return Math.floor(lines / 10) + 1;
+}
+
+function dropInterval(level) {
+  return Math.max(50, 800 - (level - 1) * 70);
+}
+// === LOGIC END ===
+// ---------- DOM ----------
+const boardCanvas = document.getElementById('board');
+const ctx = boardCanvas.getContext('2d');
+const nextCanvas = document.getElementById('next');
+const nctx = nextCanvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const levelEl = document.getElementById('level');
+const linesEl = document.getElementById('lines');
+const overlayEl = document.getElementById('overlay');
+const gameEl = document.getElementById('game');
+const musicBtn = document.getElementById('musicBtn');
+
+const CELL = 30; // 每格像素
+
+// 粉彩配色（仅渲染用，LOGIC 区的 COLORS 保持不动）
+const PASTEL_COLORS = [
+  null,
+  '#67e8f9', // I 青
+  '#fde047', // O 黄
+  '#c084fc', // T 紫
+  '#4ade80', // S 绿
+  '#f87171', // Z 红
+  '#fdba74', // L 橙
+  '#93c5fd', // J 蓝
+];
+
+// roundRect 兜底（老旧浏览器）
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+  };
+}
+
+// ---------- 音频：WebAudio 合成音乐与音效 ----------
+// 音符频率表（Hz）
+const FREQ = { A4: 440.00, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.00 };
+const BEAT = 0.42;      // 每拍秒数
+const MUSIC_GAIN = 0.1; // 背景音乐音量（0.08-0.12，避免刺耳）
+const SFX_GAIN = 0.09;  // 音效音量
+// 背景音乐《卖货郎》（Korobeiniki，公有领域）：[音名, 拍数]，方波循环
+const MELODY = [
+  ['E5', 1], ['B4', 0.5], ['C5', 0.5], ['D5', 1], ['C5', 0.5], ['B4', 0.5],
+  ['A4', 1], ['A4', 0.5], ['C5', 0.5], ['E5', 1], ['D5', 0.5], ['C5', 0.5],
+  ['B4', 1.5], ['C5', 0.5], ['D5', 1], ['E5', 1],
+  ['C5', 1], ['A4', 1], ['A4', 1], ['REST', 1],
+  ['D5', 1.5], ['F5', 0.5], ['A5', 1], ['G5', 0.5], ['F5', 0.5],
+  ['E5', 1.5], ['C5', 0.5], ['E5', 1], ['D5', 0.5], ['C5', 0.5],
+  ['B4', 1], ['B4', 0.5], ['C5', 0.5], ['D5', 1], ['E5', 1],
+  ['C5', 1], ['A4', 1], ['A4', 1], ['REST', 1],
+];
+
+let audioCtx = null;      // 单一 AudioContext，懒创建
+let musicOn = true;       // 音乐开关
+let melodyIndex = 0;
+let musicTimer = null;
+let musicOsc = null;      // 当前旋律振荡器，关音乐时停掉
+
+// 首次 keydown/touchstart 时调用：懒创建并 resume
+function ensureAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (musicOn && musicTimer === null) scheduleMusic();
+}
+
+// 播放一个音：when 为相对当前时间的延迟（秒）
+function playTone(freq, dur, type, vol, when) {
+  if (!audioCtx) return null;
+  const t0 = audioCtx.currentTime + (when || 0);
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  osc.connect(g).connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur);
+  return osc;
+}
+
+// 按节拍链式调度旋律（简单 setTimeout 链）
+function scheduleMusic() {
+  if (!musicOn || !audioCtx) { musicTimer = null; return; }
+  const item = MELODY[melodyIndex];
+  const dur = item[1] * BEAT;
+  if (item[0] !== 'REST') {
+    musicOsc = playTone(FREQ[item[0]], dur * 0.92, 'square', MUSIC_GAIN);
+  }
+  melodyIndex = (melodyIndex + 1) % MELODY.length; // 循环
+  musicTimer = setTimeout(scheduleMusic, dur * 1000);
+}
+
+function stopMusic() {
+  if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; }
+  if (musicOsc) { try { musicOsc.stop(); } catch (e) {} musicOsc = null; }
+}
+
+function toggleMusic() {
+  musicOn = !musicOn;
+  musicBtn.textContent = musicOn ? '🔊' : '🔇';
+  if (musicOn) { ensureAudio(); }
+  else { stopMusic(); }
+}
+musicBtn.addEventListener('click', toggleMusic);
+musicBtn.addEventListener('touchstart', function (e) { e.preventDefault(); toggleMusic(); }, { passive: false });
+
+// ---------- 音效（同一 AudioContext，短促 oscillator 音） ----------
+function sfxRotate() { playTone(660, 0.05, 'square', SFX_GAIN); }         // 旋转
+function sfxLock() { playTone(180, 0.08, 'square', SFX_GAIN); }           // 锁定
+function sfxLineClear(count) {                                            // 消行：上行琶音
+  const notes = count >= 4
+    ? [FREQ.C5, FREQ.E5, FREQ.G5, 1046.5]  // 四消：C5→E5→G5→C6
+    : [FREQ.C5, FREQ.E5, FREQ.G5];         // C5→E5→G5
+  notes.forEach(function (f, i) { playTone(f, 0.07, 'square', SFX_GAIN, i * 0.07); });
+}
+function sfxGameOver() {                                                  // 结束：下行 E5→C5→A4
+  [FREQ.E5, FREQ.C5, FREQ.A4].forEach(function (f, i) { playTone(f, 0.15, 'square', SFX_GAIN, i * 0.15); });
+}
+
+// ---------- 游戏状态 ----------
+// state: 'playing' | 'paused' | 'over'
+let board, piece, nextType, bag, score, lines, level, state, dropCounter, lastTime;
+
+function reset() {
+  board = createBoard();
+  bag = createBag();
+  nextType = bag();
+  score = 0; lines = 0; level = 1;
+  dropCounter = 0;
+  lastTime = performance.now();
+  state = 'playing';
+  spawnPiece();
+  hideOverlay();
+}
+
+// 生成新方块：消费预览中的 nextType，再抽一个新的 nextType
+function spawnPiece() {
+  const type = nextType;
+  nextType = bag();
+  piece = {
+    type,
+    matrix: SHAPES[type].map(row => row.slice()),
+    row: 0,
+    col: Math.floor((COLS - SHAPES[type][0].length) / 2),
+  };
+  // 生成位置被占 → 游戏结束（block out）
+  if (collides(board, piece.matrix, piece.row, piece.col)) {
+    state = 'over';
+    sfxGameOver();
+    showOverlay('游戏结束<br>最终分数：' + score + '<br><br>按 R 重新开始');
+  }
+}
+
+function movePiece(dr, dc) {
+  if (!collides(board, piece.matrix, piece.row + dr, piece.col + dc)) {
+    piece.row += dr;
+    piece.col += dc;
+    return true;
+  }
+  return false;
+}
+
+function rotatePiece(dir) {
+  const res = tryRotate(board, piece.matrix, piece.row, piece.col, dir);
+  if (res) {
+    piece.matrix = res.matrix;
+    piece.row = res.row;
+    piece.col = res.col;
+    sfxRotate();
+  }
+}
+
+// 硬降：直落到底，每格 +2 分，立即锁定
+function hardDrop() {
+  let d = 0;
+  while (!collides(board, piece.matrix, piece.row + 1, piece.col)) {
+    piece.row++;
+    d++;
+  }
+  score += 2 * d;
+  lockPiece();
+}
+
+// 锁定当前方块：写入棋盘 → 消行计分 → 生成下一块
+function lockPiece() {
+  for (let r = 0; r < piece.matrix.length; r++) {
+    for (let c = 0; c < piece.matrix[r].length; c++) {
+      if (piece.matrix[r][c] && piece.row + r >= 0) {
+        board[piece.row + r][piece.col + c] = piece.type;
+      }
+    }
+  }
+  sfxLock();
+  const res = clearLines(board);
+  board = res.board;
+  if (res.count > 0) {
+    score += lineScore(res.count, level); // 按消除发生时的当前等级计分
+    lines += res.count;
+    level = levelForLines(lines);
+    sfxLineClear(res.count);
+    showCheer(res.count);
+  }
+  spawnPiece();
+}
+
+// ---------- 鼓励语 ----------
+const CHEERS = ['', '好耶！', '太棒了！', '厉害！🌟', '🎉 四消！无敌！'];
+function showCheer(count) {
+  const el = document.createElement('div');
+  el.className = 'cheer' + (count >= 4 ? ' big' : ''); // 四消加大字号
+  el.textContent = CHEERS[count];
+  gameEl.appendChild(el);
+  setTimeout(() => el.remove(), 1200); // 动画结束后移除
+}
+
+// ---------- 覆盖层 ----------
+function showOverlay(html) {
+  overlayEl.innerHTML = html;
+  overlayEl.classList.remove('hidden');
+}
+function hideOverlay() {
+  overlayEl.classList.add('hidden');
+}
+
+// ---------- 渲染 ----------
+// 圆角矩形格子：2px 内缩 + 顶部白色高光渐变 → 底部本色 + 深色细描边
+function drawCell(g, px, py, size, color) {
+  const inset = 2;
+  const x = px + inset, y = py + inset, s = size - inset * 2;
+  const radius = Math.max(3, size * 0.2);
+  g.beginPath();
+  g.roundRect(x, y, s, s, radius);
+  g.fillStyle = color;
+  g.fill();
+  // 顶部白色 0.35 透明 → 底部透明（叠在本色上，底部即本色）
+  const grad = g.createLinearGradient(x, y, x, y + s);
+  grad.addColorStop(0, 'rgba(255,255,255,0.35)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fill();
+  g.strokeStyle = 'rgba(0,0,0,0.35)'; // 深色细描边
+  g.lineWidth = 1;
+  g.stroke();
+}
+
+// 给下落方块的格子画眼睛：两个白圆 + 黑瞳，位于格子中上部
+function drawEyes(g, px, py, size) {
+  const eyeR = size * 0.09;    // 白圆半径
+  const pupilR = size * 0.045; // 黑瞳半径
+  const gap = size * 0.28;     // 两眼间距
+  const cy = py + size * 0.36;
+  for (const dx of [-gap / 2, gap / 2]) {
+    const cx = px + size / 2 + dx;
+    g.beginPath();
+    g.arc(cx, cy, eyeR, 0, Math.PI * 2);
+    g.fillStyle = '#fff';
+    g.fill();
+    g.beginPath();
+    g.arc(cx, cy, pupilR, 0, Math.PI * 2);
+    g.fillStyle = '#222';
+    g.fill();
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#241f36';
+  ctx.fillRect(0, 0, boardCanvas.width, boardCanvas.height);
+  // 棋盘网格与已锁定方块
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      ctx.strokeRect(c * CELL + 0.5, r * CELL + 0.5, CELL - 1, CELL - 1);
+      if (board[r][c]) drawCell(ctx, c * CELL, r * CELL, CELL, PASTEL_COLORS[board[r][c]]);
+    }
+  }
+  // 当前活动方块（仅它画眼睛）
+  if (piece) {
+    for (let r = 0; r < piece.matrix.length; r++) {
+      for (let c = 0; c < piece.matrix[r].length; c++) {
+        if (piece.matrix[r][c] && piece.row + r >= 0) {
+          const px = (piece.col + c) * CELL, py = (piece.row + r) * CELL;
+          drawCell(ctx, px, py, CELL, PASTEL_COLORS[piece.type]);
+          drawEyes(ctx, px, py, CELL);
+        }
+      }
+    }
+  }
+  // HUD
+  scoreEl.textContent = score;
+  levelEl.textContent = level;
+  linesEl.textContent = lines;
+  drawNext();
+}
+
+// 下一个方块预览（居中绘制）
+function drawNext() {
+  nctx.fillStyle = '#241f36';
+  nctx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+  if (!nextType) return;
+  const m = SHAPES[nextType];
+  const size = 24;
+  const offX = (nextCanvas.width - m[0].length * size) / 2;
+  const offY = (nextCanvas.height - m.length * size) / 2;
+  for (let r = 0; r < m.length; r++) {
+    for (let c = 0; c < m[r].length; c++) {
+      if (m[r][c]) drawCell(nctx, offX + c * size, offY + r * size, size, PASTEL_COLORS[nextType]);
+    }
+  }
+}
+
+// ---------- 主循环：requestAnimationFrame + 重力计时 ----------
+function update(time = 0) {
+  const dt = time - lastTime;
+  lastTime = time; // 每帧都更新，暂停恢复后不会出现 dt 跳变
+  if (state === 'playing') {
+    dropCounter += dt;
+    if (dropCounter >= dropInterval(level)) {
+      dropCounter = 0;
+      if (!movePiece(1, 0)) lockPiece(); // 落到底 → 锁定
+    }
+  }
+  draw();
+  requestAnimationFrame(update);
+}
+
+// ---------- 动作函数（键盘与触控复用同一套） ----------
+function actLeft() { if (state === 'playing') movePiece(0, -1); }
+function actRight() { if (state === 'playing') movePiece(0, 1); }
+function actSoftDrop() { if (state === 'playing' && movePiece(1, 0)) score += 1; } // 软降每格 +1
+function actRotate() { if (state === 'playing') rotatePiece(1); }
+function actHardDrop() { if (state === 'playing') hardDrop(); }
+function actPause() {
+  if (state === 'playing') {
+    state = 'paused';
+    showOverlay('已暂停<br><br>按 P 继续');
+  } else if (state === 'paused') {
+    state = 'playing';
+    hideOverlay();
+  }
+}
+
+// ---------- 键盘输入 ----------
+function onKey(e) {
+  if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', ' '].includes(e.key)) {
+    e.preventDefault(); // 阻止方向键/空格滚动页面
+  }
+  ensureAudio(); // 首次按键时创建/恢复 AudioContext
+  if (e.key === 'r' || e.key === 'R') { reset(); return; } // R 键任意状态重开
+  if (e.key === 'p' || e.key === 'P') { actPause(); return; }
+  switch (e.key) {
+    case 'ArrowLeft':  actLeft();  break;
+    case 'ArrowRight': actRight(); break;
+    case 'ArrowDown':  actSoftDrop(); break;
+    case 'ArrowUp':
+    case 'x': case 'X': if (!e.repeat) actRotate();        break;
+    case 'z': case 'Z': if (!e.repeat) { if (state === 'playing') rotatePiece(-1); } break;
+    case ' ':          if (!e.repeat) actHardDrop();       break; // 长按空格不连发
+  }
+}
+document.addEventListener('keydown', onKey);
+
+// ---------- 触控按钮 ----------
+// touchstart preventDefault 防双击缩放/滚动；click 兜底；
+// ◀ ▶ ↓ 支持按住连发（130ms interval，touchend/touchcancel 清除）
+const TOUCH_ACTIONS = {
+  left:   { fn: actLeft,     repeat: true },
+  right:  { fn: actRight,    repeat: true },
+  down:   { fn: actSoftDrop, repeat: true },
+  rotate: { fn: actRotate },
+  drop:   { fn: actHardDrop },
+  pause:  { fn: actPause },
+};
+document.querySelectorAll('.touch button').forEach(function (btn) {
+  const act = TOUCH_ACTIONS[btn.dataset.act];
+  if (!act) return;
+  let timer = null;
+  function start(e) {
+    e.preventDefault();
+    ensureAudio(); // 首次触摸时创建/恢复 AudioContext
+    act.fn();
+    if (act.repeat) timer = setInterval(act.fn, 130); // 按住连发
+  }
+  function end() {
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+  btn.addEventListener('touchstart', start, { passive: false });
+  btn.addEventListener('touchend', end);
+  btn.addEventListener('touchcancel', end);
+  btn.addEventListener('click', function () { ensureAudio(); act.fn(); }); // 鼠标兜底
+});
+
+// ---------- 启动 ----------
+reset();
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
