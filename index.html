@@ -399,7 +399,7 @@ function spawnPiece() {
   if (collides(board, piece.matrix, piece.row, piece.col)) {
     state = 'over';
     sfxGameOver();
-    showOverlay('游戏结束<br>最终分数：' + score + '<br><br>按 R 重新开始');
+    showOverlay('游戏结束<br>最终分数：' + score + '<br><br>点击此处或按 R 重新开始');
   }
 }
 
@@ -473,6 +473,9 @@ function showOverlay(html) {
 function hideOverlay() {
   overlayEl.classList.add('hidden');
 }
+// 游戏结束后点击/触摸覆盖层也可重开（触屏设备没有 R 键）
+overlayEl.addEventListener('click', () => { if (state === 'over') reset(); });
+overlayEl.addEventListener('touchstart', (e) => { e.preventDefault(); if (state === 'over') reset(); });
 
 // ---------- 渲染 ----------
 // 圆角矩形格子：2px 内缩 + 顶部白色高光渐变 → 底部本色 + 深色细描边
