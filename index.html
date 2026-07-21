@@ -12,7 +12,7 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 .card{background:#1c1c1e;border:1px solid #2c2c2e;border-radius:16px}
 
 /* 开始页 —— 全屏固定高度，顶底分布，无滚动 */
-#startScreen{width:100%;max-width:400px;padding:0 20px 44px;gap:0;flex:1;justify-content:space-between;position:relative}
+#startScreen{width:100%;padding:0 20px 44px;gap:0;flex:1;justify-content:space-between;position:relative;border-radius:0}
 #startScreen .brand{font-size:13px;font-weight:700;letter-spacing:.06em;text-align:center;padding:18px 0 0;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 /* 中间内容区：logo+标题+输入框 垂直居中 */
 .start-mid{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;padding:0 0 20px}
@@ -79,7 +79,7 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 .mini-r .mv{font-size:20px;font-weight:700}
 
 /* 排行榜 */
-#rankScreen{width:360px;padding:24px 16px 20px;gap:14px;flex:1;position:relative}
+#rankScreen{width:100%;padding:24px 16px 20px;gap:14px;flex:1;position:relative;border-radius:0}
 .back-top{position:absolute;top:24px;left:16px;font-size:14px;color:#8e8e93;cursor:pointer;display:flex;align-items:center;gap:2px}
 #rankScreen h2{font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:36px;text-align:center}
 .rlist{display:flex;flex-direction:column;gap:12px;margin-top:6px;flex:1;overflow-y:auto}
