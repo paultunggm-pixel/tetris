@@ -271,6 +271,7 @@ var board,piece,nextType,bag,score,lines,state,dropCounter,lastTime,startTime,ti
 var DROP_SPEED=500;
 
 function gameReset(){
+  if(timerInterval)clearInterval(timerInterval);
   board=createBoard();bag=createBag();nextType=bag();score=0;lines=0;dropCounter=0;startTime=Date.now();lastTime=performance.now();
   state='playing';document.getElementById('pauseOverlay').innerHTML='<span>⏸ 暂停中<small>点击继续</small></span>';document.getElementById('pauseOverlay').classList.remove('show');
   spawnPiece() // 计时器等 Ready?Go! 结束再开
@@ -299,9 +300,10 @@ function lockPiece(){
 function showScorePopup(txt){var el=document.createElement('div');el.className='cheer';el.textContent=txt;document.getElementById('gbox').appendChild(el);setTimeout(function(){el.remove()},1200)}
 
 // ===== 暂停 / 结束覆盖层 =====
+var pauseStart=0;
 function togglePause(){
-  if(state==='playing'){state='paused';document.getElementById('pauseOverlay').classList.add('show')}
-  else if(state==='paused'){state='playing';document.getElementById('pauseOverlay').classList.remove('show');updateTimer()}
+  if(state==='playing'){state='paused';pauseStart=Date.now();document.getElementById('pauseOverlay').classList.add('show')}
+  else if(state==='paused'){startTime+=Date.now()-pauseStart;state='playing';document.getElementById('pauseOverlay').classList.remove('show');updateTimer()}
 }
 document.querySelector('.gbox-inner').addEventListener('click',function(){
   if(state==='playing'||state==='paused')togglePause();
