@@ -214,7 +214,8 @@ async function initOSS() {
 const screens = { start: document.getElementById('startScreen'), game: document.getElementById('gameScreen'), rank: document.getElementById('rankScreen') };
 function showScreen(id) { Object.values(screens).forEach(s => s.classList.remove('active')); screens[id].classList.add('active'); if(id==='game'){window.scrollTo(0,0);} }
 // iPad 检测
-function updLayout() { const wide = window.innerWidth >= 800; document.getElementById('gameScreen').className = 'app' + (wide ? ' ipad' : ''); document.getElementById('gameRow').className = 'game-row' + (wide ? ' ipad-w' : ''); }
+// iPad 检测：只增减 ipad 类，不覆盖其他类（否则会抹掉 active）
+function updLayout() { var el = document.getElementById('gameScreen'); el.classList.toggle('ipad', window.innerWidth >= 800); }
 window.addEventListener('resize', updLayout); updLayout();
 
 // ===== 玩家数据 =====
