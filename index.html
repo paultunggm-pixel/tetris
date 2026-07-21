@@ -12,7 +12,7 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 .card{background:#1c1c1e;border:1px solid #2c2c2e;border-radius:16px}
 
 /* 开始页 */
-#startScreen{width:340px;padding:50px 28px 40px;gap:0;flex:1 0 auto;justify-content:center;position:relative}
+#startScreen{max-width:340px;width:calc(100vw - 20px);padding:40px 22px 36px;gap:0;flex:1 0 auto;justify-content:center;position:relative}
 #startScreen .brand{font-size:13px;font-weight:700;letter-spacing:.06em;position:static;margin-bottom:6px;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center}
 .logo{display:inline-grid;grid-template-columns:repeat(2,18px);gap:3px;margin:0 0 14px}
 .logo i{width:18px;height:18px;border-radius:5px}
@@ -30,7 +30,7 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 .rank-entry{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:14px;color:#8e8e93;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
 
 /* 游戏页 */
-#gameScreen{width:100%;max-width:1000px;padding:8px 10px 6px;gap:6px}
+#gameScreen{width:100%;max-width:1000px;padding:6px 8px 4px;gap:4px}
 #gameScreen.ipad{flex-direction:row;align-items:stretch;gap:14px}
 .game-col{display:flex;flex-direction:column;align-items:center;flex:1;min-height:0}
 .game-col.ipad-w{flex-direction:row;align-items:stretch;gap:14px}
@@ -90,6 +90,13 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 .rname .rmeta{font-size:11px;color:#8e8e93;font-weight:400}
 .rscore{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
 .empty{text-align:center;color:#8e8e93;padding:40px 0;font-size:15px}
+/* 窄屏适配 */
+@media(max-width:400px){
+  #startScreen{padding:30px 16px 30px}
+  .title{font-size:26px}
+  .head-row{gap:4px}.stats{gap:6px}.stats .st{font-size:10px}
+  .t5{gap:4px}.t5 button{font-size:16px;height:44px}
+}
 </style>
 </head>
 <body>
@@ -261,7 +268,7 @@ var DROP_SPEED=500;
 function gameReset(){
   board=createBoard();bag=createBag();nextType=bag();score=0;lines=0;dropCounter=0;startTime=Date.now();lastTime=performance.now();
   state='playing';document.getElementById('pauseOverlay').innerHTML='<span>⏸ 暂停中<small>点击继续</small></span>';document.getElementById('pauseOverlay').classList.remove('show');
-  spawnPiece();updateTimer()
+  spawnPiece() // 计时器等 Ready?Go! 结束再开
 }
 function updateTimer(){if(timerInterval)clearInterval(timerInterval);timerInterval=setInterval(function(){if(state==='playing'){var elapsed=Math.floor((Date.now()-startTime)/1000);document.getElementById('hdTime').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(elapsed%60).padStart(2,'0');var side=document.getElementById('sidePanel');if(window.getComputedStyle(side).display!=='none')document.getElementById('sdTime').textContent=document.getElementById('hdTime').textContent}},250)}
 function spawnPiece(){
@@ -349,14 +356,14 @@ document.addEventListener('keydown',function(e){
   if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' '].includes(e.key))e.preventDefault();
   if(state==='idle'){if(e.key==='Enter'||e.key===' ')startGame();return}
   if(!state)return;ensureAudio();
-  if(e.key==='r'||e.key==='R'){gameReset();return}
+  if(e.key==='r'||e.key==='R'){gameReset();updateTimer();return}
   if(state!=='playing')return;
   switch(e.key){case'ArrowLeft':actL();break;case'ArrowRight':actR();break;case'ArrowDown':actS();break;case'ArrowUp':case'x':case'X':if(!e.repeat)actRot();break;case'z':case'Z':if(!e.repeat)rotatePiece(-1);break;case' ':if(!e.repeat)actH();break}
 });
 
 // ===== 图标 =====
-document.getElementById('btnR').onclick=function(){if(state&&state!=='idle')gameReset()};
-document.getElementById('btnR').addEventListener('touchstart',function(e){e.preventDefault();if(state&&state!=='idle')gameReset()},{passive:false});
+document.getElementById('btnR').onclick=function(){if(state&&state!=='idle'){gameReset();updateTimer()}};
+document.getElementById('btnR').addEventListener('touchstart',function(e){e.preventDefault();if(state&&state!=='idle'){gameReset();updateTimer()}},{passive:false});
 
 // ===== 触控 =====
 var T5={left:{fn:actL,repeat:true},right:{fn:actR,repeat:true},rotate:{fn:actRot},soft:{fn:actS,repeat:true},hard:{fn:actH}};
@@ -370,7 +377,7 @@ document.querySelectorAll('.t5 button').forEach(function(btn){var act=T5[btn.dat
 // ===== Ready?Go! =====
 function gameStart(){gameReset();state='ready';ensureAudio();var overlayEl=document.getElementById('pauseOverlay');overlayEl.classList.add('show');overlayEl.innerHTML='<span style="font-size:36px;color:#fff">Ready?</span>';
   setTimeout(function(){if(state!=='ready')return;overlayEl.innerHTML='<span style="font-size:36px;color:#4ade80">Go!</span>';
-    setTimeout(function(){if(state!=='ready')return;overlayEl.classList.remove('show');overlayEl.innerHTML='<span>⏸ 暂停中<small>点击继续</small></span>';state='playing';updateTimer()},500)},700)
+    setTimeout(function(){if(state!=='ready')return;overlayEl.classList.remove('show');overlayEl.innerHTML='<span>⏸ 暂停中<small>点击继续</small></span>';state='playing';startTime=Date.now();updateTimer()},500)},700)
 }
 </script>
 </body>
