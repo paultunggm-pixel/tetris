@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>俄罗斯方块 · 可爱版</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,6 +12,7 @@
     font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
     display: flex; justify-content: center; align-items: center;
     min-height: 100vh;
+    min-height: 100dvh; /* 移动浏览器动态视口高度，避免底栏挤压 */
     -webkit-tap-highlight-color: transparent;
   }
   .wrap { display: flex; gap: 20px; align-items: flex-start; padding: 12px; }
@@ -63,14 +64,39 @@
     from { opacity: 1; transform: translate(-50%, 0); }
     to   { opacity: 0; transform: translate(-50%, -60px); }
   }
-  /* 音乐开关常驻（右上角） */
-  .music-btn {
-    position: fixed; top: 10px; right: 10px; z-index: 10;
-    width: 44px; height: 44px; font-size: 20px;
-    border: 2px solid #ffd1e3; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 4px 10px rgba(180, 120, 160, 0.3);
+  /* 开始覆盖层（标题 + 开始按钮） */
+  .start-title { font-size: 34px; font-weight: bold; color: #ffe0ec; }
+  .start-sub { font-size: 16px; color: #ffb8d1; margin: 4px 0 22px; }
+  .start-btn {
+    font-size: 24px; font-weight: bold; color: #fff;
+    padding: 14px 42px; border: none; border-radius: 24px;
+    background: linear-gradient(135deg, #f9a8d4, #c084fc);
+    box-shadow: 0 6px 16px rgba(192, 132, 252, 0.5);
     cursor: pointer;
+    touch-action: none; user-select: none; -webkit-user-select: none; /* 防长按选中文字 */
+  }
+  .start-btn:active { transform: scale(0.95); }
+  /* Ready?/Go! 开场动画文字 */
+  .ready-text {
+    font-size: 48px; font-weight: bold; color: #fff;
+    animation: readyPop 0.25s ease-out;
+  }
+  .ready-text.go { color: #4ade80; }
+  @keyframes readyPop {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  /* 右上角图标栏：音乐开关 / 暂停继续 / 重新开始 */
+  #topbar {
+    position: absolute; top: 8px; right: 8px; z-index: 10;
+    display: flex; gap: 6px;
+  }
+  #topbar button {
+    width: 36px; height: 36px; font-size: 18px;
+    border: none; border-radius: 8px;
+    background: rgba(0, 0, 0, 0.45); color: #fff;
+    cursor: pointer; touch-action: none;
+    user-select: none; -webkit-user-select: none;
   }
   /* 触控按钮区：PC 端默认隐藏 */
   .touch { display: none; }
@@ -92,11 +118,12 @@
     .hud { order: 1; }
     .touch {
       order: 3;
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      display: flex; flex-wrap: nowrap; gap: 8px; /* 单行四键，不换行 */
       width: 100%; max-width: 360px; margin-top: 6px;
+      padding-bottom: calc(env(safe-area-inset-bottom) + 8px); /* 避开微信底栏/Home 指示条 */
     }
     .touch button {
-      height: 56px; font-size: 24px;
+      flex: 1; height: 56px; font-size: 26px;
       border: 2px solid #ffd1e3; border-radius: 16px;
       background: rgba(255, 255, 255, 0.85); color: #e0558a;
       box-shadow: 0 4px 10px rgba(180, 120, 160, 0.25);
@@ -107,11 +134,22 @@
 </style>
 </head>
 <body>
-<button id="musicBtn" class="music-btn" title="音乐开关">🔊</button>
 <div class="wrap">
   <div class="game" id="game">
     <canvas id="board" width="360" height="660"></canvas>
     <div id="overlay" class="overlay hidden"></div>
+    <div id="topbar">
+      <button id="btnSound" title="音乐开关">🔊</button>
+      <button id="btnPause" title="暂停/继续">⏸</button>
+      <button id="btnRestart" title="重新开始">🔄</button>
+    </div>
+    <div id="startOverlay" class="overlay">
+      <div>
+        <div class="start-title">🧱 俄罗斯方块</div>
+        <div class="start-sub">可爱版</div>
+        <button id="startBtn" class="start-btn">开始游戏</button>
+      </div>
+    </div>
   </div>
   <aside class="hud">
     <div class="panel stats">
@@ -129,11 +167,9 @@
   </aside>
   <div class="touch">
     <button data-act="left">◀</button>
+    <button data-act="drop">⤓</button>
     <button data-act="rotate">⟳</button>
     <button data-act="right">▶</button>
-    <button data-act="down">↓</button>
-    <button data-act="drop">⤓</button>
-    <button data-act="pause">⏸</button>
   </div>
 </div>
 <script>
@@ -253,7 +289,11 @@ const levelEl = document.getElementById('level');
 const linesEl = document.getElementById('lines');
 const overlayEl = document.getElementById('overlay');
 const gameEl = document.getElementById('game');
-const musicBtn = document.getElementById('musicBtn');
+const btnSound = document.getElementById('btnSound');
+const btnPause = document.getElementById('btnPause');
+const btnRestart = document.getElementById('btnRestart');
+const startOverlayEl = document.getElementById('startOverlay');
+const startBtn = document.getElementById('startBtn');
 
 const CELL = 30; // 每格像素
 
@@ -311,7 +351,8 @@ function ensureAudio() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  if (musicOn && musicTimer === null) scheduleMusic();
+  // 开始界面（idle）不起播，等点击【开始游戏】后由 startGame 触发
+  if (musicOn && musicTimer === null && state !== 'idle') scheduleMusic();
 }
 
 // 播放一个音：when 为相对当前时间的延迟（秒）
@@ -349,12 +390,12 @@ function stopMusic() {
 
 function toggleMusic() {
   musicOn = !musicOn;
-  musicBtn.textContent = musicOn ? '🔊' : '🔇';
+  btnSound.textContent = musicOn ? '🔊' : '🔇';
   if (musicOn) { ensureAudio(); }
   else { stopMusic(); }
 }
-musicBtn.addEventListener('click', toggleMusic);
-musicBtn.addEventListener('touchstart', function (e) { e.preventDefault(); toggleMusic(); }, { passive: false });
+btnSound.addEventListener('click', toggleMusic);
+btnSound.addEventListener('touchstart', function (e) { e.preventDefault(); toggleMusic(); }, { passive: false });
 
 // ---------- 音效（同一 AudioContext，短促 oscillator 音） ----------
 function sfxRotate() { playTone(660, 0.05, 'square', SFX_GAIN); }         // 旋转
@@ -370,8 +411,20 @@ function sfxGameOver() {                                                  // 结
 }
 
 // ---------- 游戏状态 ----------
-// state: 'playing' | 'paused' | 'over'
+// state: 'idle'(开始界面) | 'ready'(开场动画) | 'playing' | 'paused' | 'over'
 let board, piece, nextType, bag, score, lines, level, state, dropCounter, lastTime;
+
+// 初始进入开始界面：棋盘就绪但不动，等点击【开始游戏】
+function initIdle() {
+  board = createBoard();
+  bag = createBag();
+  nextType = bag();
+  piece = null;
+  score = 0; lines = 0; level = 1;
+  dropCounter = 0;
+  lastTime = performance.now();
+  state = 'idle';
+}
 
 function reset() {
   board = createBoard();
@@ -381,6 +434,7 @@ function reset() {
   dropCounter = 0;
   lastTime = performance.now();
   state = 'playing';
+  btnPause.textContent = '⏸'; // 重开后暂停图标复位
   spawnPiece();
   hideOverlay();
 }
@@ -587,9 +641,11 @@ function actHardDrop() { if (state === 'playing') hardDrop(); }
 function actPause() {
   if (state === 'playing') {
     state = 'paused';
-    showOverlay('已暂停<br><br>按 P 继续');
+    btnPause.textContent = '▶';
+    showOverlay('已暂停<br><br>按 P 或点击 ▶ 继续');
   } else if (state === 'paused') {
     state = 'playing';
+    btnPause.textContent = '⏸';
     hideOverlay();
   }
 }
@@ -599,8 +655,13 @@ function onKey(e) {
   if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', ' '].includes(e.key)) {
     e.preventDefault(); // 阻止方向键/空格滚动页面
   }
+  // 开始界面：回车/空格等同点击【开始游戏】，其余按键忽略
+  if (state === 'idle') {
+    if (e.key === 'Enter' || e.key === ' ') startGame();
+    return;
+  }
   ensureAudio(); // 首次按键时创建/恢复 AudioContext
-  if (e.key === 'r' || e.key === 'R') { reset(); return; } // R 键任意状态重开
+  if (e.key === 'r' || e.key === 'R') { reset(); return; } // R 键任意状态重开（idle 已在上面拦截）
   if (e.key === 'p' || e.key === 'P') { actPause(); return; }
   switch (e.key) {
     case 'ArrowLeft':  actLeft();  break;
@@ -614,16 +675,14 @@ function onKey(e) {
 }
 document.addEventListener('keydown', onKey);
 
-// ---------- 触控按钮 ----------
+// ---------- 触控按钮（单行四键：◀ ⤓ ⟳ ▶） ----------
 // touchstart preventDefault 防双击缩放/滚动；click 兜底；
-// ◀ ▶ ↓ 支持按住连发（130ms interval，touchend/touchcancel 清除）
+// ◀ ▶ 支持按住连发（130ms interval，touchend/touchcancel 清除）
 const TOUCH_ACTIONS = {
   left:   { fn: actLeft,     repeat: true },
   right:  { fn: actRight,    repeat: true },
-  down:   { fn: actSoftDrop, repeat: true },
   rotate: { fn: actRotate },
   drop:   { fn: actHardDrop },
-  pause:  { fn: actPause },
 };
 document.querySelectorAll('.touch button').forEach(function (btn) {
   const act = TOUCH_ACTIONS[btn.dataset.act];
@@ -644,8 +703,38 @@ document.querySelectorAll('.touch button').forEach(function (btn) {
   btn.addEventListener('click', function () { ensureAudio(); act.fn(); }); // 鼠标兜底
 });
 
+// ---------- 开始界面与开场动画 ----------
+// 点击【开始游戏】→ 隐藏开始层 → 重置 → Ready?(700ms)/Go!(500ms) → 正式开局
+function startGame() {
+  startOverlayEl.classList.add('hidden');
+  reset();               // 重置棋盘与状态（内部 state='playing'）
+  state = 'ready';       // 进入开场动画过渡态（重力与输入均被门控）
+  ensureAudio();         // 首次用户交互：创建/恢复 AudioContext 并起播音乐
+  showOverlay('<span class="ready-text">Ready?</span>');
+  setTimeout(function () {
+    if (state !== 'ready') return; // 动画期间被 R/🔄 打断则放弃后续
+    showOverlay('<span class="ready-text go">Go!</span>');
+    setTimeout(function () {
+      if (state !== 'ready') return;
+      hideOverlay();
+      state = 'playing';
+    }, 500);
+  }, 700);
+}
+startBtn.addEventListener('click', startGame);
+startBtn.addEventListener('touchstart', function (e) { e.preventDefault(); startGame(); }, { passive: false });
+
+// ---------- 右上角图标栏 ----------
+// ⏸/▶：暂停/继续（actPause 内部已门控，idle/ready 态自然忽略）
+btnPause.addEventListener('click', actPause);
+btnPause.addEventListener('touchstart', function (e) { e.preventDefault(); actPause(); }, { passive: false });
+// 🔄：重新开始（等同 R 键；idle 态忽略）
+function actRestart() { if (state !== 'idle') reset(); }
+btnRestart.addEventListener('click', actRestart);
+btnRestart.addEventListener('touchstart', function (e) { e.preventDefault(); actRestart(); }, { passive: false });
+
 // ---------- 启动 ----------
-reset();
+initIdle(); // 先进开始界面，等玩家点击【开始游戏】
 requestAnimationFrame(update);
 </script>
 </body>
