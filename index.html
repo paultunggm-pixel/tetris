@@ -6,15 +6,15 @@
 <title>俄罗斯方块 · YoYo's Games</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro Display","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;display:flex;justify-content:center;align-items:center}
+body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro Display","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center}
 .app{display:none;flex-direction:column;align-items:center}
 .app.active{display:flex}
 .card{background:#1c1c1e;border:1px solid #2c2c2e;border-radius:16px}
 
 /* 开始页 */
-#startScreen{width:340px;padding:10px 28px 0;gap:0;flex:1;justify-content:center;position:relative}
-#startScreen .brand{font-size:12px;font-weight:700;letter-spacing:.06em;position:absolute;top:42px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.logo{display:inline-grid;grid-template-columns:repeat(2,18px);gap:3px;margin-top:-130px;margin-bottom:14px}
+#startScreen{width:340px;padding:50px 28px 40px;gap:0;flex:1 0 auto;justify-content:center;position:relative}
+#startScreen .brand{font-size:13px;font-weight:700;letter-spacing:.06em;position:static;margin-bottom:6px;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center}
+.logo{display:inline-grid;grid-template-columns:repeat(2,18px);gap:3px;margin:0 0 14px}
 .logo i{width:18px;height:18px;border-radius:5px}
 .title{font-size:30px;font-weight:700;letter-spacing:-0.02em;margin-bottom:2px}
 .sub{font-size:13px;color:#8e8e93;margin-bottom:32px}
@@ -27,7 +27,7 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .chip{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;background:#1c1c1e;border:1px solid #2c2c2e;color:#fff;cursor:pointer}
 .chip .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
-.rank-entry{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);margin-top:0;font-size:14px;color:#8e8e93;cursor:pointer;display:flex;align-items:center;gap:6px}
+.rank-entry{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:14px;color:#8e8e93;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
 
 /* 游戏页 */
 #gameScreen{width:100%;max-width:1000px;padding:8px 10px 6px;gap:6px}
