@@ -103,14 +103,14 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
   /* 自定义提示弹窗 */
   .toast{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:999;background:rgba(0,0,0,.6)}
   .toast.show{display:flex}
-  .toast-box{background:#1c1c1e;border:1px solid #2c2c2e;border-radius:18px;padding:24px 28px 20px;text-align:center;max-width:280px}
+  .toast-box{background:#1c1c1e;border:1px solid #2c2c2e;border-radius:18px;padding:28px 28px 20px;text-align:center;max-width:280px;position:relative}
   .toast-box .toast-title{font-size:15px;color:#8e8e93;margin-bottom:10px}
-  .toast-box .toast-msg{font-size:16px;font-weight:600;color:#fff;margin-bottom:16px}
-  .toast-box .toast-btn{height:40px;padding:0 32px;border:none;border-radius:12px;background:linear-gradient(135deg,#ff375f,#ff9f0a);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+  .toast-box .toast-msg{font-size:16px;font-weight:600;color:#fff}
+  .toast-close{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;border:none;background:linear-gradient(135deg,#ff375f,#ff9f0a);color:#fff;font-size:14px;line-height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 </style>
 </head>
 <body>
-<div class="toast" id="toast"><div class="toast-box"><div class="toast-title">YoYo 说</div><div class="toast-msg" id="toastMsg"></div><button class="toast-btn" onclick="hideToast()">知道了</button></div></div>
+<div class="toast" id="toast"><div class="toast-box"><button class="toast-close" onclick="hideToast()">✕</button><div class="toast-title">YoYo 说</div><div class="toast-msg" id="toastMsg"></div></div></div>
 
 <div id="startScreen" class="app active card">
   <div class="brand">YoYo's Games</div>
