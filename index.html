@@ -100,9 +100,17 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
   }
   /* 排行榜列表可滚动 */
   .rlist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  /* 自定义提示弹窗 */
+  .toast{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:999;background:rgba(0,0,0,.6)}
+  .toast.show{display:flex}
+  .toast-box{background:#1c1c1e;border:1px solid #2c2c2e;border-radius:18px;padding:24px 28px 20px;text-align:center;max-width:280px}
+  .toast-box .toast-title{font-size:15px;color:#8e8e93;margin-bottom:10px}
+  .toast-box .toast-msg{font-size:16px;font-weight:600;color:#fff;margin-bottom:16px}
+  .toast-box .toast-btn{height:40px;padding:0 32px;border:none;border-radius:12px;background:linear-gradient(135deg,#ff375f,#ff9f0a);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
+<div class="toast" id="toast"><div class="toast-box"><div class="toast-title">YoYo 说</div><div class="toast-msg" id="toastMsg"></div><button class="toast-btn" onclick="hideToast()">知道了</button></div></div>
 
 <div id="startScreen" class="app active card">
   <div class="brand">YoYo's Games</div>
@@ -171,6 +179,10 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 
 <script src="https://gosspublic.alicdn.com/aliyun-oss-sdk-6.18.1.min.js"></script>
 <script>
+// ===== 自定义弹窗（替代 alert） =====
+function showToast(msg){document.getElementById('toastMsg').textContent=msg;document.getElementById('toast').classList.add('show')}
+function hideToast(){document.getElementById('toast').classList.remove('show')}
+
 // ===== OSS =====
 let oss=null;
 const OSS_BASE='https://tetris-data.oss-cn-hangzhou.aliyuncs.com';
@@ -203,7 +215,7 @@ async function initStart(){await loadPlayers();refreshChips();document.getElemen
 initStart();
 
 function startGame(){
-  var inp=document.getElementById('nickInput').value.trim();if(!inp){alert('请输入昵称');return}
+  var inp=document.getElementById('nickInput').value.trim();if(!inp){showToast('请输入昵称');return}
   currentPlayer=inp;ensureP(currentPlayer);
   document.getElementById('pn').textContent=currentPlayer;
   document.getElementById('av').textContent=currentPlayer[0].toUpperCase();
