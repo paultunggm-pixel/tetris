@@ -13,7 +13,8 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 
 /* 开始页 —— 全屏固定高度，顶底分布，无滚动 */
 #startScreen{width:100%;padding:0 20px 44px;gap:0;flex:1;justify-content:space-between;border-radius:0}
-#startScreen .brand{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center;padding:48px 0 0;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#startScreen .brand{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center;padding:48px 0 0;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:flex;align-items:center;justify-content:center;gap:7px}
+.brand-logo{width:22px;height:22px;border-radius:5px;flex-shrink:0}
 /* 中间内容区：logo+标题+输入框 垂直居中 */
 .start-mid{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;padding:0 0 70px}
 .logo{display:inline-grid;grid-template-columns:repeat(2,28px);gap:5px;margin:0 0 14px}
@@ -119,13 +120,13 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 <div class="toast" id="toast"><div class="toast-box"><button class="toast-close" onclick="hideToast()">✕</button><div class="toast-title">YoYo 说</div><div class="toast-msg" id="toastMsg"></div><div class="toast-btns" id="toastBtns" style="display:none"></div></div></div>
 
 <div id="startScreen" class="app active card">
-  <div class="brand">YoYo's Games</div>
+  <div class="brand"><img src="logo.png" class="brand-logo" alt="">YoYo's Games</div>
   <div class="start-mid">
     <div class="logo"><i style="background:#67e8f9"></i><i style="background:#c084fc"></i><i style="background:#fde047"></i><i style="background:#4ade80"></i></div>
     <div class="title">俄罗斯方块</div>
     <div class="sub">和小伙伴们比比谁更厉害</div>
     <div class="input-wrap">
-      <input id="nickInput" class="inp default" value="输入昵称，开始游戏" maxlength="12">
+      <input id="nickInput" class="inp default" value="起个昵称，开始游戏" maxlength="12">
       <button id="goBtn" class="btn btn-p">Start</button>
       <div id="chipList" class="chips"></div>
     </div>
@@ -231,7 +232,7 @@ async function initStart(){
   document.getElementById('rankEntry').onclick=function(){showRank()};
   document.getElementById('nickInput').addEventListener('keydown',function(e){if(e.key==='Enter')startGame()});
   // 预填文案焦点处理
-  var inp=document.getElementById('nickInput'),DEF='输入昵称，开始游戏';
+  var inp=document.getElementById('nickInput'),DEF='起个昵称，开始游戏';
   inp.addEventListener('focus',function(){if(inp.value===DEF){inp.value='';inp.classList.remove('default')}});
   inp.addEventListener('blur',function(){if(!inp.value.trim()){inp.value=DEF;inp.classList.add('default')}})
 }
@@ -239,7 +240,7 @@ initStart();
 
 function startGame(){
   var inpEl=document.getElementById('nickInput');var inp=inpEl.value.trim();
-  if(!inp||inp==='输入昵称，开始游戏'){showToast('请输入昵称');return}
+  if(!inp||inp==='起个昵称，开始游戏'){showToast('请输入昵称');return}
   inpEl.classList.remove('default');
   currentPlayer=inp;ensureP(currentPlayer);
   document.getElementById('pn').textContent=currentPlayer;
