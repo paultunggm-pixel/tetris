@@ -187,10 +187,11 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 <script src="https://gosspublic.alicdn.com/aliyun-oss-sdk-6.18.1.min.js"></script>
 <script>
 // ===== 自定义弹窗（替代 alert） =====
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function showToast(msg){document.getElementById('toastMsg').textContent=msg;document.getElementById('toastBtns').style.display='none';document.getElementById('toast').classList.add('show')}
 function hideToast(){document.getElementById('toast').classList.remove('show')}
 function showConfirm(msg,onOk){
-  document.getElementById('toastMsg').textContent=msg;
+  document.getElementById('toastMsg').innerHTML=msg;
   var btns=document.getElementById('toastBtns');
   btns.innerHTML='<button class="btn-cancel" id="confirmCancel">取消</button><button class="btn-ok" id="confirmOk">确认</button>';
   btns.style.display='flex';
@@ -222,8 +223,8 @@ function refreshChips(){
   var list=document.getElementById('chipList');list.innerHTML='';
   Object.keys(players).slice(0,6).forEach(function(n){
     var c=document.createElement('span');c.className='chip';
-    c.innerHTML='<span class="dot" style="background:'+nickColor(n)+'"></span>'+n;
-    c.onclick=function(){document.getElementById('nickInput').value=n;document.getElementById('nickInput').classList.remove('default');showConfirm('确认你是「'+n+'」？<br><small style="color:#8e8e93;font-weight:400">别乱选别人账号哦，否则分数会记录到别人账号上哦～</small>',function(){startGame()})};list.appendChild(c)
+    c.innerHTML='<span class="dot" style="background:'+nickColor(n)+'"></span>'+escHtml(n);
+    c.onclick=function(){document.getElementById('nickInput').value=n;document.getElementById('nickInput').classList.remove('default');showConfirm('确认你是「'+escHtml(n)+'」？<br><small style="color:#8e8e93;font-weight:400">别乱选别人账号哦，否则分数会记录到别人账号上哦～</small>',function(){startGame()})};list.appendChild(c)
   })
 }
 async function initStart(){
