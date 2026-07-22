@@ -86,7 +86,7 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 #rankScreen{width:100%;padding:24px 3% 20px;gap:14px;flex:1;border-radius:0}
 .back-top{position:absolute;top:20px;left:12px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;gap:2px;background:#1c1c1e;border:1px solid #2c2c2e;border-radius:10px;padding:6px 14px 6px 10px}
 #rankScreen h2{font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:36px;text-align:center}
-.rlist{display:flex;flex-direction:column;gap:12px;margin-top:6px;flex:1;overflow-y:auto;width:100%}
+.rlist{display:flex;flex-direction:column;gap:12px;margin-top:6px;flex:1;overflow-y:auto;width:100%;-webkit-overflow-scrolling:touch}
 .rrow{display:flex;align-items:center;gap:10px;padding:14px 18px}
 .rno{width:26px;height:26px;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;background:#2c2c2e;color:#8e8e93;flex-shrink:0}
 .rno.gold{background:linear-gradient(135deg,#ff9f0a,#ff375f);color:#000}
@@ -103,7 +103,6 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
     .t5{gap:4px}.t5 button{font-size:16px;height:44px}
   }
   /* 排行榜列表可滚动 */
-  .rlist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
   /* 自定义提示弹窗 */
   .toast{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:999;background:rgba(0,0,0,.6)}
   .toast.show{display:flex}
@@ -159,7 +158,7 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
       </div>
     </div>
     <div class="bwrap">
-      <div class="gbox"><div class="gbox-inner">
+      <div class="gbox" id="gbox"><div class="gbox-inner">
         <canvas id="board" width="390" height="630"></canvas>
         <div class="pause-overlay" id="pauseOverlay"><span>⏸ 暂停中<small>点击继续</small></span></div>
       </div></div>
@@ -261,7 +260,7 @@ function showRank(){
   var arr=Object.entries(players).sort(function(a,b){return b[1].best-a[1].best});
   if(!arr.length){list.innerHTML='<div class="empty">还没有人玩过呢<br>去做第一个 YoYo 战士吧！</div>';return}
   list.innerHTML=arr.map(function(e,i){var cls='';if(i===0)cls='gold';else if(i===1)cls='silver';else if(i===2)cls='bronze';
-    return '<div class="card rrow"><span class="rno'+(cls?' '+cls:'')+'">'+(i+1)+'</span><span class="rname">'+e[0]+'</span><span class="rstats">'+e[1].games+' 局 · 累计消 '+e[1].lines+' · 历史最高分 <span class="best">'+e[1].best.toLocaleString()+'</span></span></div>'
+    return '<div class="card rrow"><span class="rno'+(cls?' '+cls:'')+'">'+(i+1)+'</span><span class="rname">'+escHtml(e[0])+'</span><span class="rstats">'+e[1].games+' 局 · 累计消 '+e[1].lines+' · 历史最高分 <span class="best">'+e[1].best.toLocaleString()+'</span></span></div>'
   }).join('')
 }
 document.getElementById('rankBack').onclick=function(){showScreen(currentPlayer?'game':'start')};
@@ -382,7 +381,7 @@ function spawnPiece(){
 }
 function movePiece(dr,dc){if(!collides(board,piece.matrix,piece.row+dr,piece.col+dc)){piece.row+=dr;piece.col+=dc;return true}return false}
 function rotatePiece(dir){var res=tryRotate(board,piece.matrix,piece.row,piece.col,dir);if(res){piece.matrix=res.matrix;piece.row=res.row;piece.col=res.col;sfxRotate()}}
-function hardDrop(){var d=0;while(!collides(board,piece.matrix,piece.row+1,piece.col)){piece.row++;d++}lockPiece()}
+function hardDrop(){while(!collides(board,piece.matrix,piece.row+1,piece.col))piece.row++;lockPiece()}
 function lockPiece(){
   for(var r=0;r<piece.matrix.length;r++)for(var c=0;c<piece.matrix[r].length;c++)if(piece.matrix[r][c]&&piece.row+r>=0)board[piece.row+r][piece.col+c]=piece.type;
   sfxLock();var res=clearLines(board);board=res.board;
@@ -441,7 +440,7 @@ requestAnimationFrame(update);
 // ===== 动作 =====
 function actL(){if(state==='playing')movePiece(0,-1)}
 function actR(){if(state==='playing')movePiece(0,1)}
-function actS(){if(state==='playing'&&movePiece(1,0))score+=0} // 软降不加分（按公式只需消格×5-秒×2）
+function actS(){if(state==='playing')movePiece(1,0)} // 软降不加分
 function actH(){if(state==='playing')hardDrop()}
 function actRot(){if(state==='playing')rotatePiece(1)}
 
@@ -449,9 +448,9 @@ function actRot(){if(state==='playing')rotatePiece(1)}
 document.addEventListener('keydown',function(e){
   if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' '].includes(e.key))e.preventDefault();
   if(state==='idle'){if(e.key==='Enter'||e.key===' ')startGame();return}
-  if(!state)return;ensureAudio();
+  if(!state)return;
   if(e.key==='r'||e.key==='R'){gameReset();updateTimer();return}
-  if(state!=='playing')return;
+  if(state!=='playing')return;ensureAudio();
   switch(e.key){case'ArrowLeft':actL();break;case'ArrowRight':actR();break;case'ArrowDown':actS();break;case'ArrowUp':case'x':case'X':if(!e.repeat)actRot();break;case'z':case'Z':if(!e.repeat)rotatePiece(-1);break;case' ':if(!e.repeat)actH();break}
 });
 
