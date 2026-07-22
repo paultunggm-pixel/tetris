@@ -86,14 +86,14 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 .back-top{position:absolute;top:20px;left:12px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;gap:2px;background:#1c1c1e;border:1px solid #2c2c2e;border-radius:10px;padding:6px 14px 6px 10px}
 #rankScreen h2{font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:36px;text-align:center}
 .rlist{display:flex;flex-direction:column;gap:12px;margin-top:6px;flex:1;overflow-y:auto;width:100%}
-.rrow{display:flex;align-items:center;gap:12px;padding:14px 18px}
+.rrow{display:flex;align-items:center;gap:10px;padding:14px 18px}
 .rno{width:26px;height:26px;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;background:#2c2c2e;color:#8e8e93;flex-shrink:0}
 .rno.gold{background:linear-gradient(135deg,#ff9f0a,#ff375f);color:#000}
 .rno.silver{background:#3a3a3c;color:#d1d1d6}
 .rno.bronze{background:#3a2e22;color:#e8a860}
-.rname{flex:1;font-size:15px;font-weight:600}
-.rname .rmeta{font-size:11px;color:#8e8e93;font-weight:400}
-.rscore{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.rname{font-size:15px;font-weight:600;white-space:nowrap}
+.rstats{flex:1;text-align:right;font-size:12px;color:#8e8e93;white-space:nowrap}
+.rstats .best{font-weight:700;color:#fff;font-size:15px;margin-left:2px}
   .empty{text-align:center;color:#8e8e93;padding:40px 0;font-size:15px}
   /* 窄屏适配 */
   @media(max-width:400px){
@@ -259,7 +259,7 @@ function showRank(){
   var arr=Object.entries(players).sort(function(a,b){return b[1].best-a[1].best});
   if(!arr.length){list.innerHTML='<div class="empty">还没有人玩过呢<br>去做第一个 YoYo 战士吧！</div>';return}
   list.innerHTML=arr.map(function(e,i){var cls='';if(i===0)cls='gold';else if(i===1)cls='silver';else if(i===2)cls='bronze';
-    return '<div class="card rrow"><span class="rno'+(cls?' '+cls:'')+'">'+(i+1)+'</span><span class="rname">'+e[0]+'<span class="rmeta">'+e[1].games+' 局 · 累计消 '+e[1].lines+'</span></span><span class="rscore">'+e[1].best.toLocaleString()+'</span></div>'
+    return '<div class="card rrow"><span class="rno'+(cls?' '+cls:'')+'">'+(i+1)+'</span><span class="rname">'+e[0]+'</span><span class="rstats">'+e[1].games+' 局 · 累计消 '+e[1].lines+' · 历史最高分 <span class="best">'+e[1].best.toLocaleString()+'</span></span></div>'
   }).join('')
 }
 document.getElementById('rankBack').onclick=function(){showScreen(currentPlayer?'game':'start')};
