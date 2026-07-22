@@ -154,6 +154,7 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
       <div class="head-r">
         <button class="ibtn" id="btnS"><svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.5,8.5A4.5,4.5,0,0,1,0,0,15.5,12A4.5,4.5,0,0,1,15.5,8.5"/></svg></button>
         <button class="ibtn" id="btnR"><svg viewBox="0 0 24 24"><polyline points="1,4 1,10 7,10"/><path d="M4,15a9,9,0,1,0,3-9.7L1,10"/></svg></button>
+        <button class="ibtn" id="btnX"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
     </div>
     <div class="bwrap">
@@ -455,6 +456,18 @@ document.addEventListener('keydown',function(e){
 // ===== 图标 =====
 document.getElementById('btnR').onclick=function(){if(state&&state!=='idle'){gameReset();updateTimer()}};
 document.getElementById('btnR').addEventListener('touchstart',function(e){e.preventDefault();if(state&&state!=='idle'){gameReset();updateTimer()}},{passive:false});
+// 退出按钮
+function doExit(){
+  if(state==='playing'||state==='paused'){
+    var elapsed=Math.floor((Date.now()-startTime)/1000);
+    var sc=Math.max(0,score-elapsed*2);
+    showConfirm('确定退出？<br>当前成绩 <b>'+sc.toLocaleString()+'</b> 分 将保存到排行榜',function(){
+      saveGame(sc,lines,true);showScreen('start');stopMusic()
+    })
+  }else{showScreen('start');stopMusic()}
+}
+document.getElementById('btnX').onclick=doExit;
+document.getElementById('btnX').addEventListener('touchstart',function(e){e.preventDefault();doExit()},{passive:false});
 
 // ===== 触控 =====
 var T5={left:{fn:actL,repeat:true},right:{fn:actR,repeat:true},rotate:{fn:actRot},soft:{fn:actS,repeat:true},hard:{fn:actH}};
