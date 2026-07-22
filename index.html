@@ -471,7 +471,7 @@ function doExit(){
   }
   if(timerInterval)clearInterval(timerInterval);if(autoSaveInterval)clearInterval(autoSaveInterval);
   currentPlayer=null;state=null;
-  showScreen('start');stopMusic()
+  refreshChips();showScreen('start');stopMusic()
 }
 document.getElementById('btnX').onclick=doExit;
 document.getElementById('btnX').addEventListener('touchstart',function(e){e.preventDefault();doExit()},{passive:false});
