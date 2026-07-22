@@ -331,7 +331,6 @@ function stopMusic(){
   musicOscs.forEach(function(o){try{o.stop()}catch(e){}});musicOscs=[];
   musicStartTime=0;nextMelodyTime=0;melodyIndex=0
 }
-}
 function toggleMusic(){musicOn=!musicOn;document.getElementById('btnS').innerHTML=musicOn?'<svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.5,8.5A4.5,4.5,0,0,1,0,0,15.5,12A4.5,4.5,0,0,1,15.5,8.5"/></svg>':'<svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';if(musicOn){ensureAudio()}else{stopMusic()}}
 document.getElementById('btnS').onclick=toggleMusic;
 document.getElementById('btnS').addEventListener('touchstart',function(e){e.preventDefault();toggleMusic()},{passive:false});
