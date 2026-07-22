@@ -13,16 +13,17 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 
 /* 开始页 —— 全屏固定高度，顶底分布，无滚动 */
 #startScreen{width:100%;padding:0 20px 44px;gap:0;flex:1;justify-content:space-between;position:relative;border-radius:0}
-#startScreen .brand{font-size:13px;font-weight:700;letter-spacing:.06em;text-align:center;padding:18px 0 0;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#startScreen .brand{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center;padding:18px 0 0;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 /* 中间内容区：logo+标题+输入框 垂直居中 */
 .start-mid{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;padding:0 0 20px}
-.logo{display:inline-grid;grid-template-columns:repeat(2,18px);gap:3px;margin:0 0 14px}
-.logo i{width:18px;height:18px;border-radius:5px}
+.logo{display:inline-grid;grid-template-columns:repeat(2,36px);gap:6px;margin:0 0 14px}
+.logo i{width:36px;height:36px;border-radius:10px}
 .title{font-size:30px;font-weight:700;letter-spacing:-0.02em;margin-bottom:2px}
 .sub{font-size:13px;color:#8e8e93;margin-bottom:32px}
 .input-wrap{width:100%}
-.inp{width:100%;height:48px;border:1px solid #2c2c2e;border-radius:14px;background:#161618;padding:0 14px;font-size:16px;color:#fff;outline:none}
-.inp::placeholder{color:#555}
+.inp{width:100%;height:48px;border:1.5px solid #ff9f0a;border-radius:14px;background:#161618;padding:0 14px;font-size:16px;color:#fff;outline:none}
+.inp::placeholder{color:rgba(255,159,10,0.45)}
+.inp.default{color:rgba(255,159,10,0.55)}
 .btn{height:48px;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer}
 .btn:active{transform:scale(.96);opacity:.85}
 .btn-p{width:100%;background:linear-gradient(135deg,#ff375f,#ff9f0a);color:#fff;margin-top:10px}
@@ -103,14 +104,19 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
   /* 自定义提示弹窗 */
   .toast{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:999;background:rgba(0,0,0,.6)}
   .toast.show{display:flex}
-  .toast-box{background:#1c1c1e;border:1px solid #2c2c2e;border-radius:18px;padding:28px 28px 20px;text-align:center;max-width:280px;position:relative}
+  .toast-box{background:#1c1c1e;border:1px solid #2c2c2e;border-radius:18px;padding:32px 32px 24px;text-align:center;max-width:320px;width:calc(100vw - 48px);position:relative}
   .toast-box .toast-title{font-size:15px;color:#8e8e93;margin-bottom:10px}
   .toast-box .toast-msg{font-size:16px;font-weight:600;color:#fff}
+  .toast-btns{display:flex;gap:10px;margin-top:18px}
+  .toast-btns button{flex:1;height:42px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer}
+  .toast-btns .btn-cancel{background:#2c2c2e;color:#8e8e93}
+  .toast-btns .btn-ok{background:linear-gradient(135deg,#ff375f,#ff9f0a);color:#fff}
+  .toast-btns button:active{transform:scale(.96);opacity:.85}
   .toast-close{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;border:none;background:linear-gradient(135deg,#ff375f,#ff9f0a);color:#fff;font-size:14px;line-height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 </style>
 </head>
 <body>
-<div class="toast" id="toast"><div class="toast-box"><button class="toast-close" onclick="hideToast()">✕</button><div class="toast-title">YoYo 说</div><div class="toast-msg" id="toastMsg"></div></div></div>
+<div class="toast" id="toast"><div class="toast-box"><button class="toast-close" onclick="hideToast()">✕</button><div class="toast-title">YoYo 说</div><div class="toast-msg" id="toastMsg"></div><div class="toast-btns" id="toastBtns" style="display:none"></div></div></div>
 
 <div id="startScreen" class="app active card">
   <div class="brand">YoYo's Games</div>
@@ -119,7 +125,7 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
     <div class="title">俄罗斯方块</div>
     <div class="sub">和小伙伴们比比谁更厉害</div>
     <div class="input-wrap">
-      <input id="nickInput" class="inp" placeholder="输入昵称，开始游戏" maxlength="12">
+      <input id="nickInput" class="inp default" value="输入昵称，开始游戏" maxlength="12">
       <button id="goBtn" class="btn btn-p">Start</button>
       <div id="chipList" class="chips"></div>
     </div>
@@ -180,8 +186,17 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 <script src="https://gosspublic.alicdn.com/aliyun-oss-sdk-6.18.1.min.js"></script>
 <script>
 // ===== 自定义弹窗（替代 alert） =====
-function showToast(msg){document.getElementById('toastMsg').textContent=msg;document.getElementById('toast').classList.add('show')}
+function showToast(msg){document.getElementById('toastMsg').textContent=msg;document.getElementById('toastBtns').style.display='none';document.getElementById('toast').classList.add('show')}
 function hideToast(){document.getElementById('toast').classList.remove('show')}
+function showConfirm(msg,onOk){
+  document.getElementById('toastMsg').textContent=msg;
+  var btns=document.getElementById('toastBtns');
+  btns.innerHTML='<button class="btn-cancel" id="confirmCancel">取消</button><button class="btn-ok" id="confirmOk">确认</button>';
+  btns.style.display='flex';
+  document.getElementById('toast').classList.add('show');
+  document.getElementById('confirmCancel').onclick=hideToast;
+  document.getElementById('confirmOk').onclick=function(){hideToast();onOk()}
+}
 
 // ===== OSS =====
 let oss=null;
@@ -207,15 +222,25 @@ function refreshChips(){
   Object.keys(players).slice(0,6).forEach(function(n){
     var c=document.createElement('span');c.className='chip';
     c.innerHTML='<span class="dot" style="background:'+nickColor(n)+'"></span>'+n;
-    c.onclick=function(){document.getElementById('nickInput').value=n;startGame()};list.appendChild(c)
-  });
-  if(!Object.keys(players).length)list.innerHTML='<span style="color:#86868b;font-size:12px">暂无记录，输入昵称开始第一局</span>'
+    c.onclick=function(){document.getElementById('nickInput').value=n;document.getElementById('nickInput').classList.remove('default');showConfirm('确认你是「'+n+'」？<br><small style="color:#8e8e93;font-weight:400">别乱选别人账号哦，否则分数会记录到别人账号上哦～</small>',function(){startGame()})};list.appendChild(c)
+  })
 }
-async function initStart(){await loadPlayers();refreshChips();document.getElementById('goBtn').onclick=function(){startGame()};document.getElementById('rankEntry').onclick=function(){showRank()};document.getElementById('nickInput').addEventListener('keydown',function(e){if(e.key==='Enter')startGame()})}
+async function initStart(){
+  await loadPlayers();refreshChips();
+  document.getElementById('goBtn').onclick=function(){startGame()};
+  document.getElementById('rankEntry').onclick=function(){showRank()};
+  document.getElementById('nickInput').addEventListener('keydown',function(e){if(e.key==='Enter')startGame()});
+  // 预填文案焦点处理
+  var inp=document.getElementById('nickInput'),DEF='输入昵称，开始游戏';
+  inp.addEventListener('focus',function(){if(inp.value===DEF){inp.value='';inp.classList.remove('default')}});
+  inp.addEventListener('blur',function(){if(!inp.value.trim()){inp.value=DEF;inp.classList.add('default')}})
+}
 initStart();
 
 function startGame(){
-  var inp=document.getElementById('nickInput').value.trim();if(!inp){showToast('请输入昵称');return}
+  var inpEl=document.getElementById('nickInput');var inp=inpEl.value.trim();
+  if(!inp||inp==='输入昵称，开始游戏'){showToast('请输入昵称');return}
+  inpEl.classList.remove('default');
   currentPlayer=inp;ensureP(currentPlayer);
   document.getElementById('pn').textContent=currentPlayer;
   document.getElementById('av').textContent=currentPlayer[0].toUpperCase();
