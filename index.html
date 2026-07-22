@@ -335,14 +335,30 @@ function sfxClear(cells){playTone(FREQ.C4,.07,'square',SFX_GAIN);setTimeout(func
 function sfxGameOver(){[FREQ.E4,FREQ.C4,261.63].forEach(function(f,i){playTone(f,.15,'square',SFX_GAIN,i*.15)})}
 
 // ===== 游戏状态 =====
-var board,piece,nextType,bag,score,lines,state,dropCounter,lastTime,startTime,timerInterval;
+var board,piece,nextType,bag,score,lines,state,dropCounter,lastTime,startTime,timerInterval,autoSaveInterval;
 var DROP_SPEED=500;
 
+// 保存成绩：countGame=true 计一局，false 仅更新最高分（自动存档用）
+function saveGame(scoreOverride,linesOverride,countGame){
+  if(!currentPlayer)return;
+  var sc=typeof scoreOverride==='number'?scoreOverride:score;
+  var ln=typeof linesOverride==='number'?linesOverride:lines;
+  if(countGame===false){var p=players[currentPlayer];if(sc>p.best)p.best=sc;p.last=sc;p.updated=Date.now()}
+  else{var p=ensureP(currentPlayer);if(sc>p.best)p.best=sc;p.lines+=ln;p.games+=1;p.last=sc;p.updated=Date.now()}
+  savePlayers()
+}
 function gameReset(){
-  if(timerInterval)clearInterval(timerInterval);
+  if(timerInterval)clearInterval(timerInterval);if(autoSaveInterval)clearInterval(autoSaveInterval);
+  // 有活跃对局时：重开/退出前保存当前分数
+  if(currentPlayer&&(state==='playing'||state==='paused')&&(score>0||lines>0)){
+    var elapsed=Math.floor((Date.now()-startTime)/1000);
+    saveGame(Math.max(0,score-elapsed*2),lines,true)
+  }
   board=createBoard();bag=createBag();nextType=bag();score=0;lines=0;dropCounter=0;startTime=Date.now();lastTime=performance.now();
   state='playing';document.getElementById('pauseOverlay').innerHTML='<span>⏸ 暂停中<small>点击继续</small></span>';document.getElementById('pauseOverlay').classList.remove('show');
-  spawnPiece() // 计时器等 Ready?Go! 结束再开
+  spawnPiece();
+  // 自动存档：每 20 秒保存一次，防止关闭页面丢失
+  autoSaveInterval=setInterval(function(){if(state==='playing'&&currentPlayer&&score>0){var e=Math.floor((Date.now()-startTime)/1000);saveGame(Math.max(0,score-e*2),lines,false)}},20000)
 }
 function updateTimer(){if(timerInterval)clearInterval(timerInterval);timerInterval=setInterval(function(){if(state==='playing'){var elapsed=Math.floor((Date.now()-startTime)/1000);document.getElementById('hdTime').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(elapsed%60).padStart(2,'0');var side=document.getElementById('sidePanel');if(window.getComputedStyle(side).display!=='none')document.getElementById('sdTime').textContent=document.getElementById('hdTime').textContent}},250)}
 function spawnPiece(){
@@ -383,11 +399,7 @@ document.querySelector('.gbox-inner').addEventListener('touchstart',function(e){
 },{passive:false});
 
 // ===== 保存 =====
-async function saveGameResult(){
-  var p=players[currentPlayer];if(score>p.best)p.best=score;
-  p.lines+=lines;p.games+=1;p.last=score;p.updated=Date.now();
-  await savePlayers()
-}
+function saveGameResult(){saveGame(score,lines,true)}
 
 // ===== 渲染 =====
 var ctx=document.getElementById('board').getContext('2d');
