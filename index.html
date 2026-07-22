@@ -470,6 +470,7 @@ function doExit(){
     saveGame(Math.max(0,score-elapsed*2),lines)
   }
   if(timerInterval)clearInterval(timerInterval);if(autoSaveInterval)clearInterval(autoSaveInterval);
+  currentPlayer=null;state=null;
   showScreen('start');stopMusic()
 }
 document.getElementById('btnX').onclick=doExit;
