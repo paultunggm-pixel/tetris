@@ -343,27 +343,28 @@ function sfxGameOver(){[FREQ.E4,FREQ.C4,261.63].forEach(function(f,i){playTone(f
 var board,piece,nextType,bag,score,lines,state,dropCounter,lastTime,startTime,timerInterval,autoSaveInterval;
 var DROP_SPEED=500;
 
-// 保存成绩：countGame=true 计一局，false 仅更新最高分（自动存档用）
-function saveGame(scoreOverride,linesOverride,countGame){
+// 保存成绩：仅当超过个人历史最高分时才更新（重开/退出/结束/自动存档均按此规则）
+function saveGame(scoreOverride,linesOverride){
   if(!currentPlayer)return;
   var sc=typeof scoreOverride==='number'?scoreOverride:score;
   var ln=typeof linesOverride==='number'?linesOverride:lines;
-  if(countGame===false){var p=players[currentPlayer];if(sc>p.best)p.best=sc;p.last=sc;p.updated=Date.now()}
-  else{var p=ensureP(currentPlayer);if(sc>p.best)p.best=sc;p.lines+=ln;p.games+=1;p.last=sc;p.updated=Date.now()}
+  var p=ensureP(currentPlayer);
+  if(sc<=p.best)return; // 未超过历史最高分，不保存
+  p.best=sc;p.lines+=ln;p.games+=1;p.last=sc;p.updated=Date.now();
   savePlayers()
 }
 function gameReset(){
   if(timerInterval)clearInterval(timerInterval);if(autoSaveInterval)clearInterval(autoSaveInterval);
-  // 有活跃对局时：重开/退出前保存当前分数
+  // 重开前按需保存
   if(currentPlayer&&(state==='playing'||state==='paused')&&(score>0||lines>0)){
     var elapsed=Math.floor((Date.now()-startTime)/1000);
-    saveGame(Math.max(0,score-elapsed*2),lines,true)
+    saveGame(Math.max(0,score-elapsed*2),lines)
   }
   board=createBoard();bag=createBag();nextType=bag();score=0;lines=0;dropCounter=0;startTime=Date.now();lastTime=performance.now();
   state='playing';document.getElementById('pauseOverlay').innerHTML='<span>⏸ 暂停中<small>点击继续</small></span>';document.getElementById('pauseOverlay').classList.remove('show');
   spawnPiece();
-  // 自动存档：每 20 秒保存一次，防止关闭页面丢失
-  autoSaveInterval=setInterval(function(){if(state==='playing'&&currentPlayer&&score>0){var e=Math.floor((Date.now()-startTime)/1000);saveGame(Math.max(0,score-e*2),lines,false)}},20000)
+  // 自动存档：每 20 秒保存一次
+  autoSaveInterval=setInterval(function(){if(state==='playing'&&currentPlayer&&score>0){var e=Math.floor((Date.now()-startTime)/1000);saveGame(Math.max(0,score-e*2),lines)}},20000)
 }
 function updateTimer(){if(timerInterval)clearInterval(timerInterval);timerInterval=setInterval(function(){if(state==='playing'){var elapsed=Math.floor((Date.now()-startTime)/1000);document.getElementById('hdTime').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(elapsed%60).padStart(2,'0');var side=document.getElementById('sidePanel');if(window.getComputedStyle(side).display!=='none')document.getElementById('sdTime').textContent=document.getElementById('hdTime').textContent}},250)}
 function spawnPiece(){
@@ -404,7 +405,7 @@ document.querySelector('.gbox-inner').addEventListener('touchstart',function(e){
 },{passive:false});
 
 // ===== 保存 =====
-function saveGameResult(){saveGame(score,lines,true)}
+function saveGameResult(){saveGame(score,lines)}
 
 // ===== 渲染 =====
 var ctx=document.getElementById('board').getContext('2d');
@@ -456,15 +457,14 @@ document.addEventListener('keydown',function(e){
 // ===== 图标 =====
 document.getElementById('btnR').onclick=function(){if(state&&state!=='idle'){gameReset();updateTimer()}};
 document.getElementById('btnR').addEventListener('touchstart',function(e){e.preventDefault();if(state&&state!=='idle'){gameReset();updateTimer()}},{passive:false});
-// 退出按钮
+// 退出按钮：自动按需保存，无需确认
 function doExit(){
   if(state==='playing'||state==='paused'){
     var elapsed=Math.floor((Date.now()-startTime)/1000);
-    var sc=Math.max(0,score-elapsed*2);
-    showConfirm('确定退出？<br>当前成绩 <b>'+sc.toLocaleString()+'</b> 分 将保存到排行榜',function(){
-      saveGame(sc,lines,true);showScreen('start');stopMusic()
-    })
-  }else{showScreen('start');stopMusic()}
+    saveGame(Math.max(0,score-elapsed*2),lines)
+  }
+  if(timerInterval)clearInterval(timerInterval);if(autoSaveInterval)clearInterval(autoSaveInterval);
+  showScreen('start');stopMusic()
 }
 document.getElementById('btnX').onclick=doExit;
 document.getElementById('btnX').addEventListener('touchstart',function(e){e.preventDefault();doExit()},{passive:false});
