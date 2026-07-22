@@ -328,7 +328,9 @@ function scheduleMusic(){
 }
 function stopMusic(){
   if(musicTimer){clearTimeout(musicTimer);musicTimer=null}
-  musicOscs.forEach(function(o){try{o.stop()}catch(e){}});musicOscs=[]
+  musicOscs.forEach(function(o){try{o.stop()}catch(e){}});musicOscs=[];
+  musicStartTime=0;nextMelodyTime=0;melodyIndex=0
+}
 }
 function toggleMusic(){musicOn=!musicOn;document.getElementById('btnS').innerHTML=musicOn?'<svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.5,8.5A4.5,4.5,0,0,1,0,0,15.5,12A4.5,4.5,0,0,1,15.5,8.5"/></svg>':'<svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';if(musicOn){ensureAudio()}else{stopMusic()}}
 document.getElementById('btnS').onclick=toggleMusic;
@@ -393,7 +395,7 @@ function showScorePopup(txt){var el=document.createElement('div');el.className='
 var pauseStart=0;
 function togglePause(){
   if(state==='playing'){state='paused';pauseStart=Date.now();document.getElementById('pauseOverlay').classList.add('show');stopMusic()}
-  else if(state==='paused'){startTime+=Date.now()-pauseStart;state='playing';document.getElementById('pauseOverlay').classList.remove('show');updateTimer();if(musicOn)scheduleMusic()}
+  else if(state==='paused'){startTime+=Date.now()-pauseStart;state='playing';document.getElementById('pauseOverlay').classList.remove('show');updateTimer();if(musicOn)ensureAudio()}
 }
 document.querySelector('.gbox-inner').addEventListener('click',function(){
   if(state==='playing'||state==='paused')togglePause();
