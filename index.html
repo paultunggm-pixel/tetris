@@ -209,8 +209,9 @@ let oss=null;
 const OSS_BASE='https://tetris-data.oss-cn-hangzhou.aliyuncs.com';
 async function initOSS(){if(oss)return;try{var r=await fetch(OSS_BASE+'/config.json',{cache:'no-cache'});var c=await r.json();oss=new OSS({region:'oss-cn-hangzhou',accessKeyId:c.ak,accessKeySecret:c.sk,bucket:'tetris-data'})}catch(e){}}
 let players={};
-async function loadPlayers(){try{await initOSS();if(!oss){players={};return}var r=await oss.get('players.json');players=JSON.parse(r.content.toString())}catch(e){players={}}}
-async function savePlayers(){try{await initOSS();if(!oss)return;await oss.put('players.json',new Blob([JSON.stringify(players)],{type:'application/json'}))}catch(e){}}
+let playersLoaded=false; // 云端数据是否成功加载过；未成功时禁止保存，防止空数据覆盖全量玩家数据
+async function loadPlayers(){try{await initOSS();if(!oss){players={};return}var r=await oss.get('players.json');players=JSON.parse(r.content.toString());playersLoaded=true}catch(e){players={};if(e&&(e.status===404||e.name==='NoSuchKeyError'||/NoSuchKey/i.test(e.message||'')))playersLoaded=true}} // players.json 尚不存在（新桶）视为加载成功的空数据
+async function savePlayers(){if(!playersLoaded)return;try{await initOSS();if(!oss)return;await oss.put('players.json',new Blob([JSON.stringify(players)],{type:'application/json'}))}catch(e){}}
 function ensureP(name){if(!players[name])players[name]={best:0,lines:0,games:0,last:0,updated:0};return players[name]}
 
 // ===== 路由 =====
@@ -225,7 +226,7 @@ function nickColor(n){return nickColors[[].reduce.call(n,function(a,c){return a+
 
 function refreshChips(){
   var list=document.getElementById('chipList');list.innerHTML='';
-  Object.keys(players).slice(0,6).forEach(function(n){
+  Object.keys(players).sort(function(a,b){return (players[b].updated||0)-(players[a].updated||0)}).slice(0,6).forEach(function(n){ // 按最近游玩降序
     var c=document.createElement('span');c.className='chip';
     c.innerHTML='<span class="dot" style="background:'+nickColor(n)+'"></span>'+escHtml(n);
     c.onclick=function(){document.getElementById('nickInput').value=n;document.getElementById('nickInput').classList.remove('default');showConfirm('确认你是「'+escHtml(n)+'」？<br><small style="color:#8e8e93;font-weight:400">别乱选别人账号哦，否则分数会记录到别人账号上哦～</small>',function(){startGame()})};list.appendChild(c)
@@ -264,7 +265,7 @@ function showRank(){
   }).join('')
 }
 document.getElementById('rankBack').onclick=function(){showScreen(currentPlayer?'game':'start')};
-document.getElementById('rankBtn2').onclick=function(){showRank()};
+document.getElementById('rankBtn2').onclick=function(){if(state==='playing')togglePause();showRank()}; // 游戏中看榜先暂停
 
 // ===== 逻辑 =====
 // === LOGIC START ===
@@ -341,31 +342,36 @@ function sfxClear(cells){playTone(FREQ.C4,.07,'square',SFX_GAIN);setTimeout(func
 function sfxGameOver(){[FREQ.E4,FREQ.C4,261.63].forEach(function(f,i){playTone(f,.15,'square',SFX_GAIN,i*.15)})}
 
 // ===== 游戏状态 =====
-var board,piece,nextType,bag,score,lines,state,dropCounter,lastTime,startTime,timerInterval,autoSaveInterval;
+var board,piece,nextType,bag,score,lines,state,dropCounter,lastTime,startTime,timerInterval,autoSaveInterval,sessionBaseBest=0;
 var DROP_SPEED=500;
 
-// 保存成绩：仅当超过个人历史最高分时才更新（重开/退出/结束/自动存档均按此规则）
-function saveGame(scoreOverride,linesOverride){
+// 保存成绩：仅当本局分数超过开局时的历史最高分（sessionBaseBest）才写入
+// isAutoSave=true（每20秒自动存档，防页面直关兜底）时仅更新最高分，不计局数/消行
+function saveGame(scoreOverride,linesOverride,isAutoSave){
   if(!currentPlayer)return;
   var sc=typeof scoreOverride==='number'?scoreOverride:score;
   var ln=typeof linesOverride==='number'?linesOverride:lines;
   var p=ensureP(currentPlayer);
-  if(sc<=p.best)return; // 未超过历史最高分，不保存
-  p.best=sc;p.lines+=ln;p.games+=1;p.last=sc;p.updated=Date.now();
+  if(sc<=sessionBaseBest)return; // 未破纪录（相对开局基准），静默跳过
+  if(sc>p.best)p.best=sc;
+  if(!isAutoSave){p.lines+=ln;p.games+=1;p.last=sc}
+  p.updated=Date.now();
   savePlayers()
 }
 function gameReset(){
   if(timerInterval)clearInterval(timerInterval);if(autoSaveInterval)clearInterval(autoSaveInterval);
-  // 重开前按需保存
+  // 重开前按需保存（暂停中按 R 时用 pauseStart 计算，扣除暂停时长）
   if(currentPlayer&&(state==='playing'||state==='paused')&&(score>0||lines>0)){
-    var elapsed=Math.floor((Date.now()-startTime)/1000);
+    var now=state==='paused'?pauseStart:Date.now();
+    var elapsed=Math.floor((now-startTime)/1000);
     saveGame(Math.max(0,score-elapsed*2),lines)
   }
   board=createBoard();bag=createBag();nextType=bag();score=0;lines=0;dropCounter=0;startTime=Date.now();lastTime=performance.now();
+  sessionBaseBest=currentPlayer?ensureP(currentPlayer).best:0; // 新一局的历史最高分基准
   state='playing';document.getElementById('pauseOverlay').innerHTML='<span>⏸ 暂停中<small>点击继续</small></span>';document.getElementById('pauseOverlay').classList.remove('show');
   spawnPiece();
   // 自动存档：每 20 秒保存一次
-  autoSaveInterval=setInterval(function(){if(state==='playing'&&currentPlayer&&score>0){var e=Math.floor((Date.now()-startTime)/1000);saveGame(Math.max(0,score-e*2),lines)}},20000)
+  autoSaveInterval=setInterval(function(){if(state==='playing'&&currentPlayer&&score>0){var e=Math.floor((Date.now()-startTime)/1000);saveGame(Math.max(0,score-e*2),lines,true)}},20000) // 自动存档：仅更新最高分
 }
 function updateTimer(){if(timerInterval)clearInterval(timerInterval);timerInterval=setInterval(function(){if(state==='playing'){var elapsed=Math.floor((Date.now()-startTime)/1000);document.getElementById('hdTime').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(elapsed%60).padStart(2,'0');var side=document.getElementById('sidePanel');if(window.getComputedStyle(side).display!=='none')document.getElementById('sdTime').textContent=document.getElementById('hdTime').textContent}},250)}
 function spawnPiece(){
@@ -452,6 +458,7 @@ function actRot(){if(state==='playing')rotatePiece(1)}
 
 // ===== 键盘 =====
 document.addEventListener('keydown',function(e){
+  if(e.target&&e.target.tagName==='INPUT')return; // 焦点在输入框时不拦截（空格/方向键正常编辑昵称）
   if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' '].includes(e.key))e.preventDefault();
   if(state==='idle'){if(e.key==='Enter'||e.key===' ')startGame();return}
   if(!state)return;
@@ -466,7 +473,8 @@ document.getElementById('btnR').addEventListener('touchstart',function(e){e.prev
 // 退出按钮：自动按需保存，无需确认
 function doExit(){
   if(state==='playing'||state==='paused'){
-    var elapsed=Math.floor((Date.now()-startTime)/1000);
+    var now=state==='paused'?pauseStart:Date.now(); // 暂停中退出：扣除暂停时长
+    var elapsed=Math.floor((now-startTime)/1000);
     saveGame(Math.max(0,score-elapsed*2),lines)
   }
   if(timerInterval)clearInterval(timerInterval);if(autoSaveInterval)clearInterval(autoSaveInterval);
