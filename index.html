@@ -17,9 +17,10 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 .brand-logo{width:44px;height:44px;border-radius:10px;flex-shrink:0}
 /* 中间内容区：logo+标题+输入框 垂直居中 */
 .start-mid{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;padding:0 0 100px}
-.logo{display:inline-grid;grid-template-columns:repeat(2,24px);gap:4px;margin:0 0 14px}
+.title-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:2px}
+.logo{display:inline-grid;grid-template-columns:repeat(2,24px);gap:4px}
 .logo i{width:24px;height:24px;border-radius:7px}
-.title{font-size:30px;font-weight:700;letter-spacing:-0.02em;margin-bottom:2px}
+.title{font-size:30px;font-weight:700;letter-spacing:-0.02em}
 .sub{font-size:13px;color:#8e8e93;margin-bottom:32px}
 .input-wrap{width:100%}
 .inp{width:100%;height:48px;border:1.5px solid #ff9f0a;border-radius:14px;background:#161618;padding:0 14px;font-size:16px;color:#fff;outline:none}
@@ -27,7 +28,7 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 .inp.default{color:rgba(255,159,10,0.55)}
 .btn{height:48px;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer}
 .btn:active{transform:scale(.96);opacity:.85}
-.btn-p{width:100%;background:linear-gradient(135deg,#ff375f,#ff9f0a);color:#fff;margin-top:10px}
+.btn-p{width:100%;background:linear-gradient(135deg,#ff375f,#ff9f0a);color:#fff;margin-top:10px;font-size:18px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .chip{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;background:#1c1c1e;border:1px solid #2c2c2e;color:#fff;cursor:pointer}
 .chip .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
@@ -122,8 +123,10 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 <div id="startScreen" class="app active card">
   <div class="brand"><img src="logo.png" class="brand-logo" alt="">YoYo's Games</div>
   <div class="start-mid">
-    <div class="logo"><i style="background:#67e8f9"></i><i style="background:#c084fc"></i><i style="background:#fde047"></i><i style="background:#4ade80"></i></div>
-    <div class="title">俄罗斯方块</div>
+    <div class="title-row">
+      <div class="logo"><i style="background:#67e8f9"></i><i style="background:#c084fc"></i><i style="background:#fde047"></i><i style="background:#4ade80"></i></div>
+      <div class="title">俄罗斯方块</div>
+    </div>
     <div class="sub">和小伙伴们比比谁更厉害</div>
     <div class="input-wrap">
       <input id="nickInput" class="inp default" value="起个昵称，开始游戏" maxlength="12">
