@@ -425,9 +425,11 @@ function draw(){
   // 先画所有方块
   for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){if(board[r][c])drawCell(ctx,c*CELL,r*CELL,CELL,PASTEL_COLORS[board[r][c]])}
   if(piece)for(var r=0;r<piece.matrix.length;r++)for(var c=0;c<piece.matrix[r].length;c++)if(piece.matrix[r][c]&&piece.row+r>=0){var px=(piece.col+c)*CELL,py=(piece.row+r)*CELL;drawCell(ctx,px,py,CELL,PASTEL_COLORS[piece.type]);drawEyes(ctx,px,py,CELL)}
-  // 网格线画在最上层，确保均匀可见
-  ctx.strokeStyle='rgba(255,255,255,.07)';
-  for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++)ctx.strokeRect(c*CELL+.5,r*CELL+.5,CELL-1,CELL-1);
+  // 网格线：独立直线绘制，确保状态干净
+  ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=1;
+  var W=COLS*CELL,H=ROWS*CELL;
+  for(var c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*CELL+.5,0);ctx.lineTo(c*CELL+.5,H);ctx.stroke()}
+  for(var r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*CELL+.5);ctx.lineTo(W,r*CELL+.5);ctx.stroke()}
   // HUD
   document.getElementById('hdScore').textContent=score.toLocaleString();
   document.getElementById('hdLines').textContent=lines;
