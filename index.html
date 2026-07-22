@@ -13,11 +13,11 @@ body{background:#000;color:#fff;font-family:-apple-system,"PingFang SC","SF Pro 
 
 /* 开始页 —— 全屏固定高度，顶底分布，无滚动 */
 #startScreen{width:100%;padding:0 20px 44px;gap:0;flex:1;justify-content:space-between;border-radius:0}
-#startScreen .brand{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center;padding:18px 0 0;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#startScreen .brand{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center;padding:48px 0 0;background:linear-gradient(135deg,#ff375f,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 /* 中间内容区：logo+标题+输入框 垂直居中 */
-.start-mid{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;padding:0 0 20px}
-.logo{display:inline-grid;grid-template-columns:repeat(2,36px);gap:6px;margin:0 0 14px}
-.logo i{width:36px;height:36px;border-radius:10px}
+.start-mid{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;padding:0 0 70px}
+.logo{display:inline-grid;grid-template-columns:repeat(2,28px);gap:5px;margin:0 0 14px}
+.logo i{width:28px;height:28px;border-radius:8px}
 .title{font-size:30px;font-weight:700;letter-spacing:-0.02em;margin-bottom:2px}
 .sub{font-size:13px;color:#8e8e93;margin-bottom:32px}
 .input-wrap{width:100%}
@@ -81,7 +81,7 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
 
 /* 排行榜 */
 #rankScreen{width:100%;padding:24px 16px 20px;gap:14px;flex:1;border-radius:0}
-.back-top{position:absolute;top:24px;left:16px;font-size:14px;color:#8e8e93;cursor:pointer;display:flex;align-items:center;gap:2px}
+.back-top{position:absolute;top:20px;left:12px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;gap:2px;background:#1c1c1e;border:1px solid #2c2c2e;border-radius:10px;padding:6px 14px 6px 10px}
 #rankScreen h2{font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:36px;text-align:center}
 .rlist{display:flex;flex-direction:column;gap:12px;margin-top:6px;flex:1;overflow-y:auto}
 .rrow{display:flex;align-items:center;gap:12px;padding:12px 14px}
@@ -285,9 +285,32 @@ function clearLines(board){var kept=board.filter(function(row){return row.some(f
 // === LOGIC END ===
 
 // ===== 音频：Canon in D =====
-var FREQ={C4:261.63,D4:293.66,E4:329.63,'F#4':369.99,G4:392.00,A4:440.00,B4:493.88,'C#5':554.37,D5:587.33};
-var BEAT=0.45,MUSIC_GAIN=0.09,SFX_GAIN=0.08;
-var MELODY=[['D4',1],['F#4',1],['G4',1],['A4',1],['B4',.5],['F#4',.5],['G4',.5],['D4',.5],['G4',.5],['A4',.5],['B4',.5],['G4',.5],['A4',1],['D4',.5],['F#4',.5],['G4',1],['A4',.5],['B4',.5],['G4',.5],['F#4',.5],['E4',.5],['D4',.5],['E4',.5],['F#4',.5],['G4',.5],['F#4',.5],['E4',.5],['D4',.5],['C#5',.5],['D4',.5],['E4',.5],['F#4',.5],['G4',1],['A4',1],['B4',1],['C#5',1],['D5',1],['A4',.5],['B4',.5],['F#4',.5],['G4',.5],['D4',.5],['G4',.5],['A4',.5],['B4',.5],['F#4',.5],['G4',.5],['D4',1],['REST',1]];
+var FREQ={C4:261.63,D4:293.66,E4:329.63,'F#4':369.99,G4:392.00,A4:440.00,B4:493.88,'C#5':554.37,D5:587.33,E5:659.25,'F#5':739.99,G5:783.99,A5:880.00};
+var BEAT=0.38,MUSIC_GAIN=0.08,SFX_GAIN=0.08;
+// Canon in D (Pachelbel) — 低音线 + 主旋律交替
+var MELODY=[
+  // 低音线 D-A-B-F#
+  ['D4',.75],['A4',.75],['B4',.75],['F#4',.75],
+  // G-D-G-A
+  ['G4',.75],['D4',.75],['G4',.75],['A4',.75],
+  // 旋律开始
+  ['D5',.5],['F#5',.25],['E5',.25],['D5',.25],['C#5',.25],['D5',.25],['B4',.25],
+  ['D5',.25],['E5',.25],['F#5',.25],['G5',.25],['F#5',.25],['E5',.25],['D5',.25],['C#5',.25],
+  ['D5',.5],['A4',.25],['B4',.25],['C#5',.5],['D5',.25],['C#5',.25],['B4',.25],
+  ['A4',.25],['B4',.25],['C#5',.5],['B4',.25],['A4',.25],['G4',.25],['F#4',.25],
+  // 低音线再现
+  ['G4',.75],['A4',.75],['B4',.75],['G4',.75],
+  ['D4',.75],['G4',.75],['A4',.75],['D4',.75],
+  // 旋律第二段
+  ['D5',.25],['E5',.25],['F#5',.25],['G5',.5],['F#5',.25],['E5',.25],['D5',.25],['E5',.25],
+  ['F#5',.5],['D5',.25],['E5',.25],['F#5',.25],['G5',.25],['A5',.25],['G5',.25],['F#5',.25],
+  ['E5',.5],['D5',.25],['E5',.25],['F#5',.5],['E5',.25],['D5',.25],['C#5',.25],
+  ['D5',.5],['C#5',.25],['B4',.25],['A4',.75],
+  // 回归低音线
+  ['D4',.75],['A4',.75],['B4',.75],['F#4',.75],
+  ['G4',.75],['D4',.75],['G4',.75],['A4',.75],
+  ['D4',1.5],['REST',.5]
+];
 var audioCtx=null,musicOn=true,melodyIndex=0,musicTimer=null,musicOsc=null;
 
 function ensureAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();if(musicOn&&musicTimer===null&&state&&state!=='idle')scheduleMusic()}
@@ -339,8 +362,8 @@ function showScorePopup(txt){var el=document.createElement('div');el.className='
 // ===== 暂停 / 结束覆盖层 =====
 var pauseStart=0;
 function togglePause(){
-  if(state==='playing'){state='paused';pauseStart=Date.now();document.getElementById('pauseOverlay').classList.add('show')}
-  else if(state==='paused'){startTime+=Date.now()-pauseStart;state='playing';document.getElementById('pauseOverlay').classList.remove('show');updateTimer()}
+  if(state==='playing'){state='paused';pauseStart=Date.now();document.getElementById('pauseOverlay').classList.add('show');stopMusic()}
+  else if(state==='paused'){startTime+=Date.now()-pauseStart;state='playing';document.getElementById('pauseOverlay').classList.remove('show');updateTimer();if(musicOn)scheduleMusic()}
 }
 document.querySelector('.gbox-inner').addEventListener('click',function(){
   if(state==='playing'||state==='paused')togglePause();
