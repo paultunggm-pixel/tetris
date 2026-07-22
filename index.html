@@ -285,35 +285,46 @@ function createBag(){var bag=[];return function next(){if(!bag.length){bag=[1,2,
 function clearLines(board){var kept=board.filter(function(row){return row.some(function(c){return c===0})});var count=ROWS-kept.length;while(kept.length<ROWS)kept.unshift(new Array(COLS).fill(0));return{board:kept,count:count*COLS}} // 返回消除格数
 // === LOGIC END ===
 
-// ===== 音频：Super Mario Bros =====
-var FREQ={C4:261.63,D4:293.66,E4:329.63,F4:349.23,'F#4':369.99,G4:392.00,'G#4':415.30,A4:440.00,'A#4':466.16,B4:493.88,C5:523.25,'C#5':554.37,D5:587.33,'D#5':622.25,E5:659.25,F5:698.46,'F#5':739.99,G5:783.99,A5:880.00};
-var BEAT=0.15,MUSIC_GAIN=0.07,SFX_GAIN=0.08;
-// 超级玛丽 地上主题 (Super Mario Bros Ground Theme)
+// ===== 音频：Ode to Joy（欢乐颂） =====
+var FREQ={C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,C5:523.25,D5:587.33};
+var BEAT=0.35,MUSIC_GAIN=0.07,SFX_GAIN=0.08;
+// 贝多芬第九交响曲「欢乐颂」— 全四分/二分音符，节奏规整
 var MELODY=[
-  ['E5',1],['E5',1],['REST',1],['E5',1],['REST',1],['C5',1],['E5',1],['G5',2],
-  ['REST',2],['G4',2],['REST',2],
-  ['C5',1.5],['REST',0.5],['G4',1.5],['REST',0.5],['E4',1.5],['REST',0.5],
-  ['A4',1],['B4',1],['A#4',1],['A4',0.67],['G4',0.67],
-  ['G4',0.67],['E5',0.67],['G5',0.67],['A5',1],['F5',1],['G5',1],
-  ['REST',1],['E5',1],['REST',1],['C5',1],['D5',1],['B4',2],
-  ['REST',2],
-  ['G5',1],['F#5',1],['F5',1],['D#5',1],['E5',1],
-  ['REST',1],['G#4',1],['A4',1],['C5',1],['REST',1],['A4',1],['C5',1],['D5',1],
-  ['G5',1],['F#5',1],['F5',1],['D#5',1],['E5',1],
-  ['REST',1],['C5',1],['REST',1],['C5',1],['REST',2],
-  ['C5',1],['C5',1],['REST',1],['C5',1],['REST',1],['D5',1],['E5',1],['C5',1],['REST',1],['A4',1],['G4',1],
-  ['REST',2],
-  ['C5',1],['C5',1],['REST',1],['C5',1],['REST',1],['D5',1],['E5',1],
-  ['REST',2],
-  ['E5',0.67],['C5',0.67],['G4',0.67],['REST',1],['G4',0.67],['F4',0.67],['E4',0.67],['REST',1],
-  ['D4',2],['REST',2]
+  ['E4',1],['E4',1],['F4',1],['G4',1],['G4',1],['F4',1],['E4',1],['D4',1],
+  ['C4',1],['C4',1],['D4',1],['E4',1],['E4',1.5],['D4',0.5],['D4',2],
+  ['E4',1],['E4',1],['F4',1],['G4',1],['G4',1],['F4',1],['E4',1],['D4',1],
+  ['C4',1],['C4',1],['D4',1],['E4',1],['D4',1.5],['C4',0.5],['C4',2],
+  ['D4',1],['D4',1],['E4',1],['C4',1],['D4',1],['E4',0.5],['F4',0.5],['E4',1],['C4',1],
+  ['D4',1],['E4',0.5],['F4',0.5],['E4',1],['D4',1],['C4',1],['D4',1],['G4',2],
+  ['E4',1],['E4',1],['F4',1],['G4',1],['G4',1],['F4',1],['E4',1],['D4',1],
+  ['C4',1],['C4',1],['D4',1],['E4',1],['D4',1.5],['C4',0.5],['C4',2],['REST',1]
 ];
-var audioCtx=null,musicOn=true,melodyIndex=0,musicTimer=null,musicOsc=null;
+var audioCtx=null,musicOn=true,melodyIndex=0,musicTimer=null,musicStartTime=0,nextMelodyTime=0,musicOscs=[];
 
-function ensureAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();if(musicOn&&musicTimer===null&&state&&state!=='idle')scheduleMusic()}
+function ensureAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();if(musicOn&&musicTimer===null&&state&&state!=='idle'){musicStartTime=0;nextMelodyTime=0;melodyIndex=0;scheduleMusic()}}
 function playTone(freq,dur,type,vol,when){if(!audioCtx)return null;var t0=audioCtx.currentTime+(when||0);var osc=audioCtx.createOscillator(),g=audioCtx.createGain();osc.type=type;osc.frequency.value=freq;g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.001,t0+dur);osc.connect(g).connect(audioCtx.destination);osc.start(t0);osc.stop(t0+dur);return osc}
-function scheduleMusic(){if(!musicOn||!audioCtx){musicTimer=null;return}var item=MELODY[melodyIndex],dur=item[1]*BEAT;if(item[0]!=='REST')musicOsc=playTone(FREQ[item[0]],dur*.92,'square',MUSIC_GAIN);melodyIndex=(melodyIndex+1)%MELODY.length;musicTimer=setTimeout(scheduleMusic,dur*1000)}
-function stopMusic(){if(musicTimer){clearTimeout(musicTimer);musicTimer=null}if(musicOsc){try{musicOsc.stop()}catch(e){}}musicOsc=null}
+// WebAudio 精确时钟调度：提前 0.4s 批量安排音符，消除 setTimeout 累积漂移
+function scheduleMusic(){
+  if(!musicOn||!audioCtx){musicTimer=null;return}
+  if(!musicStartTime)musicStartTime=audioCtx.currentTime+0.05;
+  var lookAhead=0.4;
+  while(nextMelodyTime<audioCtx.currentTime-musicStartTime+lookAhead){
+    var item=MELODY[melodyIndex],dur=item[1]*BEAT;
+    if(item[0]!=='REST'&&FREQ[item[0]]){
+      var osc=audioCtx.createOscillator(),g=audioCtx.createGain(),t0=musicStartTime+nextMelodyTime;
+      osc.type='square';osc.frequency.value=FREQ[item[0]];
+      g.gain.setValueAtTime(MUSIC_GAIN,t0);g.gain.exponentialRampToValueAtTime(.001,t0+dur*.92);
+      osc.connect(g).connect(audioCtx.destination);osc.start(t0);osc.stop(t0+dur);
+      musicOscs.push(osc)
+    }
+    nextMelodyTime+=dur;melodyIndex=(melodyIndex+1)%MELODY.length
+  }
+  musicTimer=setTimeout(scheduleMusic,100)
+}
+function stopMusic(){
+  if(musicTimer){clearTimeout(musicTimer);musicTimer=null}
+  musicOscs.forEach(function(o){try{o.stop()}catch(e){}});musicOscs=[]
+}
 function toggleMusic(){musicOn=!musicOn;document.getElementById('btnS').innerHTML=musicOn?'<svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.5,8.5A4.5,4.5,0,0,1,0,0,15.5,12A4.5,4.5,0,0,1,15.5,8.5"/></svg>':'<svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';if(musicOn){ensureAudio()}else{stopMusic()}}
 document.getElementById('btnS').onclick=toggleMusic;
 document.getElementById('btnS').addEventListener('touchstart',function(e){e.preventDefault();toggleMusic()},{passive:false});
