@@ -168,6 +168,7 @@ canvas#board{display:block;background:#161618;width:100%;max-width:390px;height:
         </div>
       </div>
       <div class="head-r">
+        <button class="ibtn" id="btnP" style="font-size:18px">⏸</button>
         <button class="ibtn" id="btnS"><svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.5,8.5A4.5,4.5,0,0,1,0,0,15.5,12A4.5,4.5,0,0,1,15.5,8.5"/></svg></button>
         <button class="ibtn" id="btnR"><svg viewBox="0 0 24 24"><polyline points="1,4 1,10 7,10"/><path d="M4,15a9,9,0,1,0,3-9.7L1,10"/></svg></button>
         <button class="ibtn" id="btnX"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
@@ -349,6 +350,8 @@ function stopMusic(){
   musicStartTime=0;nextMelodyTime=0;melodyIndex=0
 }
 function toggleMusic(){musicOn=!musicOn;document.getElementById('btnS').innerHTML=musicOn?'<svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.5,8.5A4.5,4.5,0,0,1,0,0,15.5,12A4.5,4.5,0,0,1,15.5,8.5"/></svg>':'<svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';if(musicOn){ensureAudio()}else{stopMusic()}}
+document.getElementById('btnP').onclick=function(){if(state==='playing'||state==='paused')togglePause()};
+document.getElementById('btnP').addEventListener('touchstart',function(e){e.preventDefault();if(state==='playing'||state==='paused')togglePause()},{passive:false});
 document.getElementById('btnS').onclick=toggleMusic;
 document.getElementById('btnS').addEventListener('touchstart',function(e){e.preventDefault();toggleMusic()},{passive:false});
 
