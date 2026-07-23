@@ -266,6 +266,7 @@ function startGame(){
   if(!inp||inp==='起个昵称，开始游戏'){showToast('请输入昵称');return}
   inpEl.classList.remove('default');
   currentPlayer=inp;ensureP(currentPlayer);
+  ensureAudio(); // 用户手势内激活音频上下文
   document.getElementById('pn').textContent=currentPlayer;
   document.getElementById('av').textContent=currentPlayer[0].toUpperCase();
   document.getElementById('helloText').textContent='Hello '+currentPlayer+'，加油！';
